@@ -1,2 +1,2 @@
 # PSScriptAnalyzerRules
-Rulee for PSScriptAnalyzer
+Rules for PSScriptAnalyzer
