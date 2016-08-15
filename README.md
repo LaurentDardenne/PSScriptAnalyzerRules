@@ -1,0 +1,2 @@
+# PSScriptAnalyzerRules
+Rulee for PSScriptAnalyzer
