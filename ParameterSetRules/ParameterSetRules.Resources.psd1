@@ -1,0 +1,3 @@
+﻿ConvertFrom-StringData @'
+# English strings
+'@

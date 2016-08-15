@@ -1,0 +1,3 @@
+﻿ConvertFrom-StringData @'
+# French strings
+'@

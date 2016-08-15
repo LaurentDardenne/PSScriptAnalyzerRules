@@ -1,0 +1,9 @@
+﻿TOPIC
+    CommunityAnalyzerRules '0.0.0.1'
+
+SHORT DESCRIPTION
+    Todo
+
+LONG DESCRIPTION
+
+YOUR HEADER HERE
