@@ -47,8 +47,13 @@ CLRVersion = '4.0'
 # Processor architecture (None, X86, Amd64) required by this module
 # ProcessorArchitecture = ''
 
+#<DEFINE %DEBUG%>
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules=@{ModuleName="Log4Posh";GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="1.1.0.0"}  
+RequiredModules=@(
+ @{ModuleName="Log4Posh"; GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="1.2.0.0"}
+ @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.5.0"}
+)
+#<UNDEF %DEBUG%>     
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
