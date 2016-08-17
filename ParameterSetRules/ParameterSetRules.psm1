@@ -2,6 +2,8 @@
 
 Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resources.psd1 -EA Stop
                                       
+#Todo : add build with Remove-Conditionnal (psm1 + psd1)
+#Todo Test-OutputTypeAttribut -> ParameterSetName inused or case sensitive
 
 #<DEFINE %DEBUG%>
 #bug PSScriptAnalyzer ?
@@ -36,7 +38,7 @@ Function NewDiagnosticRecord{
    #                 string scriptPath, string ruleId = null, List<CorrectionExtent> suggestedCorrections = null)
  New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord" `
              -ArgumentList $Message,$FunctionDefinitionAst.Extent,
-             $PSCmdlet.MyInvocation.InvocationName,Warning,$null
+             $PSCmdlet.MyInvocation.InvocationName,$Severity,$null
 }
 
 <#
@@ -82,23 +84,23 @@ Function Measure-DetectingErrorsInDefaultParameterSetName{
  )
 
 process { 
-# #todo
-# Test-OutputTypeAttibut
-# s'il en existe: le nom du jeu doit exister, ne pas être dupliqué ?   
-# 
-  #Todo Remove-Conditionnal psm1 + psd1
-  
-  #TEST bug ipmo
+  #TEST bug RequiredModule
 #   if ($null -ne $DebugLogger)
 #   { $DebugLogger.PSDebug("Check the function '(FunctionDefinitionAst.Name)'") }
 #   get-module >  c:\temp\test.txt
 # 
-  
-  $DebugLogger.PSDebug("Check the function '$($FunctionDefinitionAst.Name)'")
+
+  $FunctionName=$FunctionDefinitionAst.Name
+  $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
+  $DebugLogger.PSDebug("Check the function '$FunctionName'") #<%REMOVE%>
   try
   {
     $Result=New-object System.Collections.Arraylist
     $ParamBlock=$FunctionDefinitionAst.Body.ParamBlock
+    $DebugLogger.PSDebug("Paramblock is null : $($null -eq $ParamBlock)") #<%REMOVE%>
+    if ($null -eq $ParamBlock)
+    { return } #minimal function code
+    $DebugLogger.PSDebug("ParamBlock.Attributes.Count: $($ParamBlock.Attributes.Count)") #<%REMOVE%>
     
     $CBA=$script:Helpers.GetCmdletBindingAttributeAst($ParamBlock.Attributes)
     $DPS_Name=$CBA.NamedArguments.Where({$_.ArgumentName -eq 'DefaultParameterSetName'}).Argument.Value
@@ -111,36 +113,42 @@ process {
     $DebugLogger.PSDebug("DefaultParameterSet is set ? $($null -ne $DPS_Name)") #<%REMOVE%>
     $DebugLogger.PSDebug("DefaultParameterSet name= $DPS_Name") #<%REMOVE%>    
     $DebugLogger.PSDebug("Number of parameter set : $SetCount") #<%REMOVE%>
+     $DebugLogger.PSDebug("parameter set : $ParameterSets") #<%REMOVE%>
+    
+    if (($null -eq $DPS_Name) -and ($SetCount -eq 0 ))
+    { return } #Nothing to do
     
     if (($null -eq $DPS_Name) -and ($SetCount -gt 1))
-    {  $result.Add((NewDiagnosticRecord $RulesMsg.W_DpsNotDeclared Warning)) > $null   } 
+    {  $result.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning)) > $null   } 
 
-    if ($SetCount -eq 1)
+    # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires
+    # Pour I_PsnRedundant il y a 1,n déclarations redondantes mais pour I_DpsUnnecessary il y a 1 déclaration inutile
+    if (($null -eq $DPS_Name)-and ($SetCount -eq 1))
     {       
-       $DebugLogger.PSDebug("Dps redondant.") #<%REMOVE%>
-       $result.Add((NewDiagnosticRecord $RulesMsg.I_PsnRedundant Information )) > $null
+       $DebugLogger.PSDebug("PSN redondant.") #<%REMOVE%>
+       $result.Add((NewDiagnosticRecord ($RulesMsg.I_PsnRedundant -F $FunctionName) Information )) > $null
     }
     
     if (@($ParameterSets;$DPS_Name) -eq [System.Management.Automation.ParameterAttribute]::AllParameterSets)
     { 
        $DebugLogger.PSDebug("Le nom est '__AllParameterSets', ce nommage est improbable, mais autorisé") #<%REMOVE%>
-       $result.Add((NewDiagnosticRecord $RulesMsg.W_DpsAvoid_AllParameterSets_Name Warning )) > $null
+       $result.Add((NewDiagnosticRecord ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning )) > $null
     }
 
     if ($null -ne $DPS_Name) 
     {       
        if ($SetCount -eq 0)
        {
-          $DebugLogger.PSDebug("Dps seul n'a pas d'intérêt") #<%REMOVE%>
-          $result.Add((NewDiagnosticRecord $RulesMsg.I_DpsUnnecessary Information )) > $null
+          $DebugLogger.PSDebug("Dps seul est inutile") #<%REMOVE%>
+          $result.Add((NewDiagnosticRecord ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information )) > $null
        }
        else 
        {       
           $DebugLogger.PSDebug("Test sur la cohérence et sur la casse: $ParameterSets") #<%REMOVE%>
-          if ($DPS_Name -cnotin $ParameterSets)
+          if (($ParameterSets.count -gt 0) -and ($DPS_Name -cnotin $ParameterSets))
           {
             $DebugLogger.PSDebug("Dps inutilisé") #<%REMOVE%>
-            $result.Add((NewDiagnosticRecord $RulesMsg.E_DpsInused Error)) > $null
+            $result.Add((NewDiagnosticRecord ($RulesMsg.E_DpsInused -F $FunctionName) Error)) > $null
           }
        }
     }
@@ -161,11 +169,11 @@ process {
          $Correction=New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.CorrectionExtent" `
           -ArgumentList  $CBAExtent.StartLineNumber, $CBAExtent.EndLineNumber,$CBAExtent.StartColumnNumber,
                          $CBAExtent.EndColumnNumber, $FunctionDefinitionAst.Name, $FunctionDefinitionAst.Extent.File,                
-                         $RulesMsg.Correction_CheckPsnCaseSensitive
+                         ($RulesMsg.Correction_CheckPsnCaseSensitive  -F $FunctionName)
          $ofs=','
          $CaseSensitive.ExceptWith($CaseInsensitive)
          $result.Add((New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord" `
-                     -ArgumentList ($RulesMsg.E_CheckPsnCaseSensitive -F "$CaseSensitive"),
+                     -ArgumentList ($RulesMsg.E_CheckPsnCaseSensitive -F $FunctionName,"$CaseSensitive"),
                                    $FunctionDefinitionAst.Extent,$PSCmdlet.MyInvocation.InvocationName,Error,$null,$null,$Correction)) > $null
        }  
     } 
@@ -336,7 +344,7 @@ process {
 #<DEFINE %DEBUG%> 
 Function OnRemoveParameterSetRules {
   Stop-Log4Net $Script:lg4n_ModuleName
-}#OnRemovePsIonicZip
+}#OnRemoveParameterSetRules
  
 # Section  Initialization
 $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveParameterSetRules }
