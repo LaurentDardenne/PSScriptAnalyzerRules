@@ -1,0 +1,64 @@
+﻿# clone directory
+clone_folder: c:\projects\PSScriptAnalyzerRules
+#ParameterSetRules
+
+clone_depth: 0
+
+install:
+  - ps: | 
+        Install-PackageProvider Nuget -ForceBootstrap -Force
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Install-Module Pester -Force
+        Install-Module PsScriptAnalyzer -force
+        Install-Module Psake  -force
+
+        Register-PSRepository -Name PoshBuildTools -SourceLocation https://ci.appveyor.com/nuget/poshbuildtools
+        Install-Module PoshBuildTools -Scope CurrentUser -Force
+        
+        $ModulePath='c:\projects\Modules'
+        Md "$ModulePath\DTW.PS.FileSystem" > $null
+        
+        $source = 'http://www.dtwconsulting.com/PS/Downloads/DTW.PS.FileSystem.zip'
+        $destination = "$ModulePath\\DTW.PS.FileSystem.zip"
+         Invoke-WebRequest $source -OutFile $destination
+         Expand-Archive -Path $destination  -DestinationPath $ModulePath
+         remove-item "$ModulePath\Tests" -Force -Recurse 
+       
+        $env:PSModulePath +=";$ModulePath"
+
+
+build_script:
+  - ps: |
+        . $env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRule_ProjectProfile.ps1
+        Import-Module Psake
+        . $env:APPVEYOR_BUILD_FOLDER\Tools\Build.ps1
+
+test_script:
+  - ps: |
+        Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
+        $Results = Invoke-ScriptAnalyzer -Path $PSScriptAnalyzerRuleDelivry -Recurse -Severity Error -ErrorAction SilentlyContinue
+        If ($Results) {
+          $ResultString = $Results | Out-String
+          Write-Warning $ResultString
+          Add-AppveyorMessage -Message "PSScriptAnalyzer output contained one or more result(s) with 'Error' severity.`
+          Check the 'Tests' tab of this build for more details." -Category Error
+          Update-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Failed -ErrorMessage $ResultString
+           
+          # Failing the build
+          Throw "Build failed"
+        }
+        Else {
+          Update-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Passed
+        }
+
+# Upload the project along with TestResults as a zip archive
+on_finish:
+  - ps: |
+        Add-AppveyorTest -Name "Finish" -Outcome Running
+        $zipFile ="c:\projects\Modules\PSScriptAnalyzerRule.zip"
+        Add-Type -assemblyname System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRuleDelivry, $zipFile)
+        @(
+            # You can add other artifacts here
+            (ls $zipFile)
+        ) | % { Push-AppveyorArtifact $_.FullName }

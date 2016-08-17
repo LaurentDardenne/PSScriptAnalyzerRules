@@ -84,11 +84,14 @@ Function Measure-DetectingErrorsInDefaultParameterSetName{
  )
 
 process { 
-  #TEST bug RequiredModule
-#   if ($null -ne $DebugLogger)
-#   { $DebugLogger.PSDebug("Check the function '(FunctionDefinitionAst.Name)'") }
-#   get-module >  c:\temp\test.txt
-# 
+#<DEFINE %TEST%>
+@"
+TEST RequiredModule
+DebugLogger -is null : $($null -eq $DebugLogger)
+$( $ofs=',';get-module)
+----
+"@ > c:\temp\test.txt
+#<UNDEF %TEST%> 
 
   $FunctionName=$FunctionDefinitionAst.Name
   $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>

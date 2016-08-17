@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plasterManifest schemaVersion="0.3" xmlns="http://www.microsoft.com/schemas/PowerShell/Plaster/v1">
+    <metadata>
+        <id>e37fe296-63bd-4ec6-9075-4dea884de7f1</id>
+        <title>Configure a Powershell project</title>
+        <description>Clone a project.</description>
+        <version>0.1.0</version>
+        <tags>Project,Clone</tags>
+    </metadata>
+    <parameters>
+        <parameter name='Delivry' type='text' default='${env:temp}\Delivry' prompt='Enter the name of the delivry directory'/>
+        <parameter name='Logs' type='text' default='${env:temp}\Logs' prompt='Enter the name of the logs directory'/>
+    </parameters>
+    <content>
+        <message>Create the profile of the project</message>
+        <templateFile source='Templates\PSScriptAnalyzerRules_ProjectProfile.T.ps1' destination='PSScriptAnalyzerRules_ProjectProfile.ps1' encoding='UTF8'/>
+
+         <!-- Personnal todo list -->
+        <templateFile source='Templates\TodoList.T.tdl' 
+            destination='PSScriptAnalyzerRules.tdl' 
+            encoding='UTF8'/>
+
+        <file source='Templates\_gitignore'
+              destination='.gitignore'/>
+            <modify path='.gitIgnore' encoding='UTF8'>
+              <replace>
+                  <original>(?s)^(.*)$</original>
+                  <substitute expand='true'>``$0${PLASTER_PARAM_ProjectName}.tdl</substitute>
+              </replace>
+            </modify> 
+            
+        <templateFile source='Templates\PSScriptAnalyzerRules.library-ms'
+            destination='PSScriptAnalyzerRules.library-ms'/> 
+
+        <templateFile source='Templates\PostInstall.T.ps1'
+            destination='PostInstall.ps1'
+            encoding='UTF8'/> 
+
+    </content>
+</plasterManifest>
+
