@@ -51,7 +51,7 @@ test_script:
           Update-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Passed
         }
         
-        cd  "C:\projects\psscriptanalyzer\Modules\ParameterSetRules\Tests"
+        cd  "C:\projects\psscriptanalyzer\Modules\ParameterSetRules\Test"
         $ruleTestResults = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ruleTestResultsFile -PassThru
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $ruleTestResultsFile))
         if ($ruleTestResults.FailedCount -gt 0) { 
