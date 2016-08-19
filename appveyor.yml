@@ -29,7 +29,7 @@ install:
 
 build_script:
   - ps: |
-        . $env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRule_ProjectProfile.ps1
+        . $env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1
         Import-Module Psake
         . $env:APPVEYOR_BUILD_FOLDER\Tools\Build.ps1
 
