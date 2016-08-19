@@ -36,7 +36,7 @@ build_script:
 test_script:
   - ps: |
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
-        $Results = Invoke-ScriptAnalyzer -Path $PSScriptAnalyzerRuleDelivry -Recurse -Severity Error -ErrorAction SilentlyContinue
+        $Results = Invoke-ScriptAnalyzer -Path "$PSScriptAnalyzerRuleDelivryModules\ParameterSetRules\ParameterSetRules.psm1 -Severity Error -ErrorAction SilentlyContinue
         If ($Results) {
           $ResultString = $Results | Out-String
           Write-Warning $ResultString
@@ -50,6 +50,13 @@ test_script:
         Else {
           Update-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Passed
         }
+        
+        cd  "C:\projects\psscriptanalyzer\Modules\ParameterSetRules\Tests"
+        $ruleTestResults = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ruleTestResultsFile -PassThru
+        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $ruleTestResultsFile))
+        if ($ruleTestResults.FailedCount -gt 0) { 
+            throw "$($ruleTestResults.FailedCount) tests failed."
+        }        
 
 # Upload the project along with TestResults as a zip archive
 on_finish:
