@@ -23,8 +23,8 @@ if ( $null -eq [System.Environment]::GetEnvironmentVariable("ProfilePSScriptAnal
 }
 
  # Variable spécifiques au poste de développement
-$PSScriptAnalyzerRulesDelivry= "$('${env:temp}\\Delivry'.TrimEnd('\','/'))\PSScriptAnalyzerRules"   
-$PSScriptAnalyzerRulesLogs= "$('${env:temp}\Logs\'.TrimEnd('\','/'))\PSScriptAnalyzerRules" 
+$PSScriptAnalyzerRulesDelivry= "${env:temp}\Delivry\PSScriptAnalyzerRules"   
+$PSScriptAnalyzerRulesLogs= "${env:temp}\Logs\PSScriptAnalyzerRules" 
 
  # Variable communes à tous les postes, leurs contenu est spécifique au poste de développement
 $PSScriptAnalyzerRulesBin= "$VcsPathRepository\Bin"
