@@ -6,7 +6,7 @@ Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resou
 #Todo Test-OutputTypeAttribut -> ParameterSetName inused or case sensitive
 
 #<DEFINE %DEBUG%>
-#bug PSScriptAnalyzer ?
+#bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
 Import-module Log4Posh
  
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
@@ -84,15 +84,6 @@ Function Measure-DetectingErrorsInDefaultParameterSetName{
  )
 
 process { 
-#<DEFINE %TEST%>
-@"
-TEST RequiredModule
-DebugLogger -is null : $($null -eq $DebugLogger)
-$( $ofs=',';get-module)
-----
-"@ > c:\temp\test.txt
-#<UNDEF %TEST%> 
-
   $FunctionName=$FunctionDefinitionAst.Name
   $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
   $DebugLogger.PSDebug("Check the function '$FunctionName'") #<%REMOVE%>
@@ -105,11 +96,13 @@ $( $ofs=',';get-module)
     { return } #minimal function code
     $DebugLogger.PSDebug("ParamBlock.Attributes.Count: $($ParamBlock.Attributes.Count)") #<%REMOVE%>
     
+      #note: si plusieurs attributs [CmdletBinding] existe, la méthode CmdletBinding() renvoi le premier trouvé 
     $CBA=$script:Helpers.GetCmdletBindingAttributeAst($ParamBlock.Attributes)
     $DPS_Name=$CBA.NamedArguments.Where({$_.ArgumentName -eq 'DefaultParameterSetName'}).Argument.Value
+  
       #Récupère les noms de jeux 
       #Les paramètres communs sont dans le jeu nommé '__AllParameterSets'
-    [string[]] $ParameterSets=$ParamBlock.Parameters.Attributes.NamedArguments.Where({$_.ArgumentName -eq 'ParameterSetName'}).Argument.Value|
+    [string[]] $ParameterSets=$ParamBlock.Parameters.Attributes.NamedArguments.Where({$_.ArgumentName -ceq 'ParameterSetName'}).Argument.Value|
                     Select-Object -Unique
     $SetCount=$ParameterSets.Count
   
@@ -119,14 +112,18 @@ $( $ofs=',';get-module)
      $DebugLogger.PSDebug("parameter set : $ParameterSets") #<%REMOVE%>
     
     if (($null -eq $DPS_Name) -and ($SetCount -eq 0 ))
-    { return } #Nothing to do
+    { return } #Nothing to do                                                                           
     
     if (($null -eq $DPS_Name) -and ($SetCount -gt 1))
-    {  $result.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning)) > $null   } 
+    {  
+       #todo : Pour certaines constructions basées sur les paramètres obligatoire (ex: Pester.Set-ScriptBlockScope)
+       #       ce warning ne devrait pas se déclencher.
+      $result.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning)) > $null 
+    } 
 
     # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires
     # Pour I_PsnRedundant il y a 1,n déclarations redondantes mais pour I_DpsUnnecessary il y a 1 déclaration inutile
-    if (($null -eq $DPS_Name)-and ($SetCount -eq 1))
+    if ((($null -ne $DPS_Name) -and ($SetCount -eq 1) -and ($DPS_Name -ceq  $ParameterSets[0])) -or (($null -eq $DPS_Name) -and ($SetCount -eq 1))) 
     {       
        $DebugLogger.PSDebug("PSN redondant.") #<%REMOVE%>
        $result.Add((NewDiagnosticRecord ($RulesMsg.I_PsnRedundant -F $FunctionName) Information )) > $null
@@ -140,7 +137,7 @@ $( $ofs=',';get-module)
 
     if ($null -ne $DPS_Name) 
     {       
-       if ($SetCount -eq 0)
+       if (($SetCount -eq  0) -or (($SetCount -eq  1) -and ($DPS_Name -ceq  $ParameterSets[0])))
        {
           $DebugLogger.PSDebug("Dps seul est inutile") #<%REMOVE%>
           $result.Add((NewDiagnosticRecord ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information )) > $null
@@ -155,10 +152,10 @@ $( $ofs=',';get-module)
           }
        }
     }
-    if ($SetCount -gt 1)
+    if (($SetCount -gt 1) -or (($null -ne $DPS_Name) -and ($SetCount -eq  1)))
     {
         #bug https://windowsserver.uservoice.com/forums/301869-powershell/suggestions/11088147-parameterset-names-should-not-be-case-sensitive
-       $ParameterSets += $DPS_Name #todo Add [System.Management.Automation.ParameterAttribute]::AllParameterSets ?   
+       $ParameterSets += $DPS_Name    
        $CaseSensitive=[System.Collections.Generic.HashSet[String]]::new($ParameterSets,[StringComparer]::InvariantCulture)
        $CaseInsensitive=[System.Collections.Generic.HashSet[String]]::new($ParameterSets,[StringComparer]::InvariantCultureIgnoreCase)
        
