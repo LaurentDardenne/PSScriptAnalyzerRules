@@ -1,13 +1,13 @@
 ﻿Function TestParameterSet{
-  [CmdletBinding(DefaultParameterSetName = "Fonctionnalite3")]
+  [CmdletBinding(defaultparameterSetName = "Fonctionnalite3")]
   Param (
-    [Parameter(ParameterSetName="__AllParameterSets")]
+    [Parameter(ParametersetName="__AllParameterSets")]
    [Switch] $A,
-    [Parameter(ParameterSetName="Fonctionnalite2")]
+    [Parameter(ParameterSetname="Fonctionnalite2")]
    [Switch] $B,
-    [Parameter(ParameterSetName="Fonctionnalite3")]
+    [Parameter(parameterSetName="Fonctionnalite3")]
    [Switch] $C,
-    [Parameter(ParameterSetName="__AllParameterSets")]
+    [Parameter(parametersetname="__AllParameterSets")]
     [Parameter(ParameterSetName="Fonctionnalite2")]
     [Parameter(ParameterSetName="Fonctionnalite3")]
    [Switch] $D,

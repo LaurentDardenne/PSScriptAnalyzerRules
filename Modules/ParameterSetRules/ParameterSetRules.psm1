@@ -102,7 +102,7 @@ process {
   
       #Récupère les noms de jeux 
       #Les paramètres communs sont dans le jeu nommé '__AllParameterSets'
-    [string[]] $ParameterSets=$ParamBlock.Parameters.Attributes.NamedArguments.Where({$_.ArgumentName -ceq 'ParameterSetName'}).Argument.Value|
+    [string[]] $ParameterSets=$ParamBlock.Parameters.Attributes.NamedArguments.Where({$_.ArgumentName -eq 'ParameterSetName'}).Argument.Value|
                     Select-Object -Unique
     $SetCount=$ParameterSets.Count
   
@@ -172,8 +172,10 @@ process {
                          ($RulesMsg.Correction_CheckPsnCaseSensitive  -F $FunctionName)
          $ofs=','
          $CaseSensitive.ExceptWith($CaseInsensitive)
+         $DebugLogger.PSDebug("ExceptWith: $CaseSensitive") #<%REMOVE%>
+         $DebugLogger.PSDebug("ExceptWith : $CaseInsensitive") #<%REMOVE%>
          $result.Add((New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord" `
-                     -ArgumentList ($RulesMsg.E_CheckPsnCaseSensitive -F $FunctionName,"$CaseSensitive"),
+                     -ArgumentList ($RulesMsg.E_CheckPsnCaseSensitive -F $FunctionName,"$($ParameterSets -eq ($CaseSensitive|Select-Object -first 1))"),
                                    $FunctionDefinitionAst.Extent,$PSCmdlet.MyInvocation.InvocationName,Error,$null,$null,$Correction)) > $null
        }  
     } 

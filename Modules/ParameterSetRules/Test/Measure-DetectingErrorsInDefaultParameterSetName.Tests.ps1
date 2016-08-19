@@ -266,7 +266,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.E_DpsInused -F 'TestParameterSet')
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1')
       }
 
 #<%Use case %> Function with 1 parameter and 1 ParameterSet 'name1', cmdletbinding DPS filled with 'Name1' BUT case sensitive *
@@ -282,7 +282,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.E_DpsInused -F 'TestParameterSet')
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1')
       }
 
 #<%Use case %> Function with 2 parameters and 3 ParameterSet 'Name1','Name2', cmdletbinding DPS filled with 'Name3' *
@@ -309,7 +309,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results = Invoke-ScriptAnalyzer @Params
         $Results.Count | should be (1)
         $Results[0].Severity| should be 'Error'
-        $Results[0].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[0].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1,Name1')
       } 
 
  #<%Use case %> Function with 2 parameters and 1 ParameterSet 'Name1','Name1', cmdletbinding DPS filled with 'name1' BUT case sensitive - 2 *
@@ -325,7 +325,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.E_DpsInused -F 'TestParameterSet')        
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1')
       } 
 
 #<%Use case %> Function with 5 parameters and 3 ParameterSet, cmdletbinding filled with '__AllParameterSets' *      
@@ -357,7 +357,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Warning'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.W_DpsNotDeclared -F 'TestParameterSet')
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1')
       }
 
 #<%Use case %> Function with 2 parameters and 1 ParameterSet 'Name1','name1', cmdletbinding DPS filled with 'Name2' BUT case sensitive *
@@ -373,7 +373,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.E_DpsInused -F 'TestParameterSet')
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name1')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name1,name1')
       }
 
 #<%Use case %> Function with 2 parameters and 2 ParameterSet 'Name1','Name2', cmdletbinding DPS filled with 'name2' BUT case sensitive *
@@ -389,7 +389,23 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
         $Results[0].Message|should be ($RulesMessage.E_DpsInused -F 'TestParameterSet')
-        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','name2')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','Name2,name2')
+      }
+
+#<%Use case %> Function with 4 parameters and 2 ParameterSet 'text,'Text',TEXT','notext', cmdletbinding not filled BUT case sensitive
+      It "Function with 4 parameters and 2 ParameterSet 'text,'Text',TEXT','notext', cmdletbinding not filled BUT case sensitive." {
+        $FileName="$Path\Function with 4 parameters and 2 ParameterSet 'text,'Text',TEXT','notext', cmdletbinding not filled BUT case sensitive.ps1"
+        $Params=@{
+          Path=$Filename
+          CustomRulePath=$CustomRulePath          
+        }
+  
+        $Results = Invoke-ScriptAnalyzer @Params
+        $Results.Count | should be (2)
+        $Results[0].Severity| should be 'Warning'
+        $Results[1].Severity| should be 'Error'
+        $Results[0].Message|should be ($RulesMessage.W_DpsNotDeclared -F 'TestParameterSet')
+        $Results[1].Message|should be ($RulesMessage.E_CheckPsnCaseSensitive -F 'TestParameterSet','text,Text,TEXT')
       }
     }#context
 }
