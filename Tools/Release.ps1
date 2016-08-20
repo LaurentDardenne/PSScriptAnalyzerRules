@@ -149,7 +149,6 @@ Task Pester -Depends PSScriptAnalyzer {
   #http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip
   #  http://ottomatt.pagesperso-orange.fr/Temp/Appveyor/PSScriptAnalyzerRulesReport.html
 
-  #(New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile
   if ($Results.FailedCount -gt 0) { 
       throw "Pester : $($Results.FailedCount) tests ont échoués."
   }   

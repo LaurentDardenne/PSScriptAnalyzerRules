@@ -22,8 +22,13 @@ install:
         $destination = "$ModulePath\DTW.PS.FileSystem.zip"
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
-         remove-item "$ModulePath\Tests" -Force -Recurse 
-       
+         #remove-item "$ModulePath\Tests" -Force -Recurse 
+        
+        $source = http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
+        $destination = "$ModulePath"
+         Invoke-WebRequest $source -OutFile $destination
+         Expand-Archive -Path $destination  -DestinationPath $ModulePath
+        
         $env:PSModulePath +=";$ModulePath"
 
 
@@ -35,8 +40,10 @@ build_script:
 
 test_script:
   - ps: |
+           #Workaround :
+           # A command that prompts the user failed because the host program or the command type does not support user interaction.
         Set-ItemProperty -Name DisablePromptToUpdateHelp -Value 1 -path 'HKLM:\SOFTWARE\Microsoft\PowerShell' 
-        Import-Module PsScriptAnalyzer
+        Import-Module PSScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
           Path="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1"
@@ -63,9 +70,13 @@ test_script:
         $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
         $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile)
+        
+        $ReportFile="$env:\Temp\ParameterSetRules-TestsReport.html"
+        &"$ModulePath\ReportUnit.exe $ResultsFile $ReportFile
+        Push-AppveyorArtifact $ReportFile
         if ($Results.FailedCount -gt 0) { 
             throw "$($ruleTestResults.FailedCount) tests failed."
-        }      
+        }
 
 # Upload the project along with TestResults as a zip archive
 on_finish:
