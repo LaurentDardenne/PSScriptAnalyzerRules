@@ -24,9 +24,9 @@ install:
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
         
         $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
-        $destination = "$ModulePath\ReportUnit"
+        $destination = "$ModulePath\reportunit.zip"
          Invoke-WebRequest $source -OutFile $destination
-         Expand-Archive -Path "$destination"  -DestinationPath $ModulePath
+         Expand-Archive -Path $destination  -DestinationPath $ModulePath
         
         $env:PSModulePath +=";$ModulePath"
 
