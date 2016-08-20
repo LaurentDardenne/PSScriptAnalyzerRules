@@ -136,7 +136,12 @@ Task TestBOMFinal {
   }
 } #TestBOMFinal
 
-Task Pester -Depends PSScriptAnalyzer { 
+Task Pester -Depends PSScriptAnalyzer {
+   #Execute les tests via la config de Appveyor, ansi on renseigne l'onglet Test :
+   # https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules/build/tests
+  if (Test-Path env:APPVEYOR)
+  {  return }        
+  
   cd  "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Test"
   $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
   $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
@@ -151,6 +156,8 @@ Task Pester -Depends PSScriptAnalyzer {
 }#Pester
 
 Task PSScriptAnalyzer {
+  if (Test-Path env:APPVEYOR)
+  {  return }  
   Write-Host "Analyse du code des scripts"
   Import-Module PsScriptAnalyzer
   $Params=@{
