@@ -21,8 +21,8 @@ try {
 
 $Error.Clear()
 if (Test-Path env:APPVEYOR)
-{ Invoke-Psake .\Release.ps1 -parameters @{"Config"="Release"} -nologo }
+{ Invoke-Psake .\Release.ps1 -parameters @{"Configuration"="Release"} -nologo }
 else
-{ Invoke-Psake .\Release.ps1 -parameters @{"Config"="$($PsCmdlet.ParameterSetName)"} -nologo }
+{ Invoke-Psake .\Release.ps1 -parameters @{"Configuration"="$($PsCmdlet.ParameterSetName)"} -nologo }
 
 
