@@ -25,7 +25,7 @@ install:
          #remove-item "$ModulePath\Tests" -Force -Recurse 
         
         $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
-        $destination = $ModulePath
+        $destination = "$ModulePath\ReportUnit"
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
         
@@ -73,7 +73,7 @@ test_script:
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile)
         
         $ReportFile="$env:\Temp\ParameterSetRules-TestsReport.html"
-        &"$ModulePath\ReportUnit.exe" $ResultsFile $ReportFile
+        &"$ModulePath\ReportUnit\ReportUnit.exe" $ResultsFile $ReportFile
         Push-AppveyorArtifact $ReportFile
         if ($Results.FailedCount -gt 0) { 
             throw "$($ruleTestResults.FailedCount) tests failed."
