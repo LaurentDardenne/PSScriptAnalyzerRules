@@ -35,6 +35,7 @@ build_script:
 
 test_script:
   - ps: |
+        dir $PSScriptAnalyzerRulesDelivery
         Import-Module PsScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
