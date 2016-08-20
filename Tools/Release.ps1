@@ -10,8 +10,14 @@ Task CreateZip -Depends Delivery,TestBomFinal,Pester {
   { Remove-item $zipFile } 
   Add-Type -assemblyname System.IO.Compression.FileSystem
   [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRulesDelivery, $zipFile)
+
   if (Test-Path env:APPVEYOR)
-  { Push-AppveyorArtifact $zipFile }     
+  { 
+    dir zipfile
+    dir $PSScriptAnalyzerRulesDelivery
+    dir $env:Temp
+    Push-AppveyorArtifact $zipFile 
+  }     
 }
 
 Task Delivery -Depends Clean,RemoveConditionnal {
