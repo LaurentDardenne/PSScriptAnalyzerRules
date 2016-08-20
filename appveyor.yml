@@ -39,7 +39,7 @@ test_script:
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
           Path="$PSScriptAnalyzerRulesDelivry\ParameterSetRules.psm1"
-          CustomRulePath="$PSScriptAnalyzerRulesDelivry\ParameterSetRules.psd1" 
+          CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" 
           #Severity='Error'
           #ErrorAction='SilentlyContinue'
         }
