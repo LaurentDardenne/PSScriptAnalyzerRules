@@ -18,11 +18,11 @@ $sb=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
 
 $script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInvocation.MyCommand.ScriptBlock.Module.SessionState.InvokeCommand,$null)
 
-function Get-CommonParameters{ 
+function Get-CommonParameter{ 
   [System.Management.Automation.Internal.CommonParameters].GetProperties().Names
-}#Get-CommonParameters
+}#Get-CommonParameter
 
-[string[]]$script:CommonParameters=Get-CommonParameters
+[string[]]$script:CommonParameters=Get-CommonParameter
 
 $script:CommonParametersFilter= { $script:CommonParameters -notContains $_.Name}
 
@@ -201,147 +201,147 @@ process {
  }#process
 }#Measure-DetectingErrorsInDefaultParameterSetName
 
-# #todo à adapter
-Function Measure-DetectingErrorsInParameterList{         
-<#
-.SYNOPSIS
-   Détermine si les jeux de paramètres d'une commande sont valides.
-   Un jeux de paramètres valide :
-   les numéros de positions de ses paramètres doivent se suivre et ne pas être dupliqué.
-   Les noms de paramètres débutant par un chiffre invalideront le test.
-#>  
- [CmdletBinding()]
- [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
-
- Param(
-       [Parameter(Mandatory = $true)]
-       [ValidateNotNullOrEmpty()]
-       [System.Management.Automation.Language.FunctionDefinitionAst]
-      $FunctionDefinitionAst
- )
-
-process { 
-  $FunctionName=$FunctionDefinitionAst.Name
-  $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
-  $DebugLogger.PSDebug("Check the function '$FunctionName'") #<%REMOVE%> 
-
-  $_AllNames=@($Cmd.ParameterSets|
-            Foreach {
-              $PrmStName=$_.Name
-              $P=$_.Parameters|Foreach {$_.Name}|Where  {$_ -notin $script:CommonParameters} 
-              $DebugLogger.PSDebug("Build $PrmStName $($P.Count)") #<%REMOVE%>
-              if (($P.Count) -eq 0)
-              { Write-Warning "[$($Cmd.Name)]: the parameter set '$PrmStName' is empty." } #todo logger
-              $P
-            })
-
-  $Sets=[psCustomObject]@{
-     PSTypename='TestParameterSetInformation'
-     CommandName=$Cmd.Name
-     Set=new-object System.Collections.ArrayList
-     isValid=$false
-  }                          
-  if ($_AllNames.Count -eq 0 ) 
-  { return $Sets  }
-   
-   #Contient les noms des paramètres de tous les jeux
-   #Les noms peuvent être dupliqués
-  $AllNames=new-object System.Collections.ArrayList(,$_AllNames)
-  
-  $Cmd.ParameterSets| 
-   foreach {
-     $Name=$_.Name
-     $DebugLogger.PSDebug("Current ParemeterSet $Name") #<%REMOVE%>
-     $InvalidParametersName=new-object System.Collections.ArrayList
-      #Contient tous les noms de paramètre du jeux courant
-     $Params=new-object System.Collections.ArrayList
-      #Contient les positions des paramètres du jeux courant
-     $Positions=new-object System.Collections.ArrayList
-     $Others=$AllNames.Clone()
-     
-     $_.Parameters|
-      Where {$_.Name -notin $script:CommonParameters}|
-      Foreach {
-        $ParameterName=$_.Name
-        $DebugLogger.PSDebug("Add $ParameterName $($_.Position)") #<%REMOVE%>
-        $Params.Add($ParameterName) > $null
-        $Positions.Add($_.Position) > $null
-         #Toutes les constructions ne sont pas testées
-         #par exemple les noms d'opérateur, cela fonctionne mais rend le code légérement obscur
-         #todo pas d'espace au début ou en fin
-         #todo ${global:test}
-         #todo ne pas contenir de point
-        if (($ParameterName -match "^\d|-|\+|%|&" ) -or ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($ParameterName)))
-        { 
-          $DebugLogger.PSDebug("Invalide parameter name '$ParameterName'") #<%REMOVE%>
-          $InvalidParametersName.Add($ParameterName) > $null 
-        }         
-      }
-     
-      #Supprime dans la collection globale
-      #les noms de paramètres du jeux courant
-     $Params| 
-      Foreach { 
-        $DebugLogger.PSDebug("Remove $_") #<%REMOVE%>
-        $Others.Remove($_) 
-      }
-
-      #Supprime les valeurs des positions par défaut
-     $FilterPositions=$Positions|Where {$_ -ge 0}
-      #Get-Unique attend une collection triée
-     $SortedPositions=$FilterPositions|Sort-Object  
-     $isDuplicate= -not (@($SortedPositions|Get-Unique).Count -eq $FilterPositions.Count)
-     $isSequential= TestSequential $SortedPositions
-     
-     $isPositionValid=($isDuplicate -eq $False) -and ($isSequential -eq $true)
-     #TODO : faux en V5 
-     #-> cf Method private System.Management.Automation.CmdletParameterBinderController.ValidateParameterSets
-     $HasParameterUnique= &{
-         if ($Others.Count -eq 0 ) 
-         { 
-           $DebugLogger.PSDebug("Only one parameter set.") #<%REMOVE%>
-           return $true
-         }
-         foreach ($Current in $Params)
-         {
-           if ($Current -notin $Others)
-           { return $true}
-         }
-         return $false           
-      }#$HasParameterUnique
-     
-     $isContainsInvalidParameter=$InvalidParametersName.Count -gt 0
-            
-     $O=[psCustomObject]@{
-            #Mémorise les informations.
-            #Utiles en cas de construction de rapport
-           PSTypename='ParameterSetInformation' 
-           ParameterSetName=$Name
-           Params=$Params;
-           Others=$Others;
-           Positions=$Positions;
-           InvalidParameterName=$InvalidParametersName #.Clone()
-            
-            #Les propriété suivantes indiquent la ou les causes d'erreur
-           isHasUniqueParameter= $HasParameterUnique;
-
-           isPositionContainsDuplicate= $isDuplicate;
-            #S'il existe des nombres dupliqués, la collection ne peut pas être une suite
-           isPositionSequential= $isSequential
-            
-           isPositionValid= $isPositionValid
-           
-           isContainsInvalidParameter=$isContainsInvalidParameter
-           
-            #La propriété suivante indique si le jeux de paramètre est valide ou pas.
-           isValid= $HasParameterUnique -and $isPositionValid -and -not $isContainsInvalidParameter
-         }#PSObject
-     $Sets.Set.Add($O) > $null
-   }#For ParameterSets
-   $Sets.isValid=$null -eq ($Sets.Set|Where isValid -eq $false|Select -First 1) 
-   ,$Sets
- }#process
-}#Test-ParameterSet
+#todo à adapter
+# Function Measure-DetectingErrorsInParameterList{         
+# <#
+# .SYNOPSIS
+#    Détermine si les jeux de paramètres d'une commande sont valides.
+#    Un jeux de paramètres valide :
+#    les numéros de positions de ses paramètres doivent se suivre et ne pas être dupliqué.
+#    Les noms de paramètres débutant par un chiffre invalideront le test.
+# >  
+#  [CmdletBinding()]
+#  [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
+# 
+#  Param(
+#        [Parameter(Mandatory = $true)]
+#        [ValidateNotNullOrEmpty()]
+#        [System.Management.Automation.Language.FunctionDefinitionAst]
+#       $FunctionDefinitionAst
+#  )
+# 
+# process { 
+#   $FunctionName=$FunctionDefinitionAst.Name
+#   $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
+#   $DebugLogger.PSDebug("Check the function '$FunctionName'") #<%REMOVE%> 
+# 
+#   $_AllNames=@($Cmd.ParameterSets|
+#             Foreach-Object {
+#               $PrmStName=$_.Name
+#               $P=$_.Parameters|Foreach-Object {$_.Name}|Where-Object  {$_ -notin $script:CommonParameters} 
+#               $DebugLogger.PSDebug("Build $PrmStName $($P.Count)") #<%REMOVE%>
+#               if (($P.Count) -eq 0)
+#               { Write-Warning "[$($Cmd.Name)]: the parameter set '$PrmStName' is empty." } #todo logger
+#               $P
+#             })
+# 
+#   $Sets=[psCustomObject]@{
+#      PSTypename='TestParameterSetInformation'
+#      CommandName=$Cmd.Name
+#      Set=new-object System.Collections.ArrayList
+#      isValid=$false
+#   }                          
+#   if ($_AllNames.Count -eq 0 ) 
+#   { return $Sets  }
+#    
+#    #Contient les noms des paramètres de tous les jeux
+#    #Les noms peuvent être dupliqués
+#   $AllNames=new-object System.Collections.ArrayList(,$_AllNames)
+#   
+#   $Cmd.ParameterSets| 
+#    Foreach-Object {
+#      $Name=$_.Name
+#      $DebugLogger.PSDebug("Current ParemeterSet $Name") #<%REMOVE%>
+#      $InvalidParametersName=new-object System.Collections.ArrayList
+#       #Contient tous les noms de paramètre du jeux courant
+#      $Params=new-object System.Collections.ArrayList
+#       #Contient les positions des paramètres du jeux courant
+#      $Positions=new-object System.Collections.ArrayList
+#      $Others=$AllNames.Clone()
+#      
+#      $_.Parameters|
+#       Where-Object {$_.Name -notin $script:CommonParameters}|
+#       Foreach-Object {
+#         $ParameterName=$_.Name
+#         $DebugLogger.PSDebug("Add $ParameterName $($_.Position)") #<%REMOVE%>
+#         $Params.Add($ParameterName) > $null
+#         $Positions.Add($_.Position) > $null
+#          #Toutes les constructions ne sont pas testées
+#          #par exemple les noms d'opérateur, cela fonctionne mais rend le code légérement obscur
+#          #todo pas d'espace au début ou en fin
+#          #todo ${global:test}
+#          #todo ne pas contenir de point
+#         if (($ParameterName -match "^\d|-|\+|%|&" ) -or ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($ParameterName)))
+#         { 
+#           $DebugLogger.PSDebug("Invalide parameter name '$ParameterName'") #<%REMOVE%>
+#           $InvalidParametersName.Add($ParameterName) > $null 
+#         }         
+#       }
+#      
+#       #Supprime dans la collection globale
+#       #les noms de paramètres du jeux courant
+#      $Params| 
+#       Foreach-Object { 
+#         $DebugLogger.PSDebug("Remove $_") #<%REMOVE%>
+#         $Others.Remove($_) 
+#       }
+# 
+#       #Supprime les valeurs des positions par défaut
+#      $FilterPositions=$Positions|Where-Object {$_ -ge 0}
+#       #Get-Unique attend une collection triée
+#      $SortedPositions=$FilterPositions|Sort-Object  
+#      $isDuplicate= -not (@($SortedPositions|Get-Unique).Count -eq $FilterPositions.Count)
+#      $isSequential= TestSequential $SortedPositions
+#      
+#      $isPositionValid=($isDuplicate -eq $False) -and ($isSequential -eq $true)
+#      #TODO : faux en V5 
+#      #-> cf Method private System.Management.Automation.CmdletParameterBinderController.ValidateParameterSets
+#      $HasParameterUnique= &{
+#          if ($Others.Count -eq 0 ) 
+#          { 
+#            $DebugLogger.PSDebug("Only one parameter set.") #<%REMOVE%>
+#            return $true
+#          }
+#          foreach ($Current in $Params)
+#          {
+#            if ($Current -notin $Others)
+#            { return $true}
+#          }
+#          return $false           
+#       }#$HasParameterUnique
+#      
+#      $isContainsInvalidParameter=$InvalidParametersName.Count -gt 0
+#             
+#      $O=[psCustomObject]@{
+#             #Mémorise les informations.
+#             #Utiles en cas de construction de rapport
+#            PSTypename='ParameterSetInformation' 
+#            ParameterSetName=$Name
+#            Params=$Params;
+#            Others=$Others;
+#            Positions=$Positions;
+#            InvalidParameterName=$InvalidParametersName #.Clone()
+#             
+#             #Les propriété suivantes indiquent la ou les causes d'erreur
+#            isHasUniqueParameter= $HasParameterUnique;
+# 
+#            isPositionContainsDuplicate= $isDuplicate;
+#             #S'il existe des nombres dupliqués, la collection ne peut pas être une suite
+#            isPositionSequential= $isSequential
+#             
+#            isPositionValid= $isPositionValid
+#            
+#            isContainsInvalidParameter=$isContainsInvalidParameter
+#            
+#             #La propriété suivante indique si le jeux de paramètre est valide ou pas.
+#            isValid= $HasParameterUnique -and $isPositionValid -and -not $isContainsInvalidParameter
+#          }#PSObject
+#      $Sets.Set.Add($O) > $null
+#    }#For ParameterSets
+#    $Sets.isValid=$null -eq ($Sets.Set|Where-Object isValid -eq $false|Select-Object -First 1) 
+#    ,$Sets
+#  }#process
+# }#Test-ParameterSet
 
 #<DEFINE %DEBUG%> 
 Function OnRemoveParameterSetRules {

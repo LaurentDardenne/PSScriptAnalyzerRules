@@ -154,11 +154,11 @@ Task PSScriptAnalyzer {
   Import-Module PsScriptAnalyzer
   $Params=@{
     Path="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1"
-    CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" 
+    CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1" 
     #Severity='Error'
     #ErrorAction='SilentlyContinue'
   }
-  $Results = Invoke-ScriptAnalyzer @Params
+  $Results = Invoke-ScriptAnalyzer @Params -IncludeDefaultRules
   If ($Results) {
     $ResultString = $Results | Out-String
     Write-host 'PSScriptAnalyzer renvot des erreurs'

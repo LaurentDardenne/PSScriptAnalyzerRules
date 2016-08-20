@@ -40,7 +40,7 @@ test_script:
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
           Path="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1"
-          CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" 
+          CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1" 
           #Severity='Error'
           #ErrorAction='SilentlyContinue'
         }
@@ -60,9 +60,10 @@ test_script:
         }
         
         cd  "$env:APPVEYOR_BUILD_FOLDER\Modules\ParameterSetRules\Test"
-        $ruleTestResults = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ruleTestResultsFile -PassThru
-        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $ruleTestResultsFile))
-        if ($ruleTestResults.FailedCount -gt 0) { 
+        $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
+        $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
+        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile))
+        if ($Results.FailedCount -gt 0) { 
             throw "$($ruleTestResults.FailedCount) tests failed."
         }        
 
