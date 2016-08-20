@@ -26,7 +26,7 @@ Describe "Rule DetectingErrorsInDefaultParameterSetName " {
 #<%Use case %> Function no param() ,no cmdletbinding
        It "Function no param() ,no cmdletbinding." {
         $FileName="$Path\Function no param() ,no cmdletbinding.ps1"
-        
+        write-host "Marche Pôoooooo ?"
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (0)
       }
