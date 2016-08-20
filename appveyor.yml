@@ -24,7 +24,7 @@ install:
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
          #remove-item "$ModulePath\Tests" -Force -Recurse 
         
-        $source = http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
+        $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
         $destination = "$ModulePath"
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
