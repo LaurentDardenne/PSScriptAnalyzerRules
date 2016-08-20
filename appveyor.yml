@@ -38,12 +38,12 @@ build_script:
         Import-Module Psake
         . "$PSScriptAnalyzerRulesVcs\Tools\Build.ps1" -Release
 
+# Set-ItemProperty is a workaround :
+# A command that prompts the user failed because the host program or the command type does not support user interaction.
 test_script:
   - ps: |
-# Workaround :
-# A command that prompts the user failed because the host program or the command type does not support user interaction.
-        Set-ItemProperty -Name DisablePromptToUpdateHelp -Value 1 -path 'HKLM:\SOFTWARE\Microsoft\PowerShell' 
 
+        Set-ItemProperty -Name DisablePromptToUpdateHelp -Value 1 -path 'HKLM:\SOFTWARE\Microsoft\PowerShell' 
         Import-Module PSScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
