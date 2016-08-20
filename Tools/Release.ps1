@@ -12,12 +12,7 @@ Task CreateZip -Depends Delivery,TestBomFinal,Pester {
   [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRulesDelivery, $zipFile)
 
   if (Test-Path env:APPVEYOR)
-  { 
-    dir zipfile
-    dir $PSScriptAnalyzerRulesDelivery
-    dir $env:Temp
-    Push-AppveyorArtifact $zipFile 
-  }     
+  {  Push-AppveyorArtifact $zipFile }     
 }
 
 Task Delivery -Depends Clean,RemoveConditionnal {
