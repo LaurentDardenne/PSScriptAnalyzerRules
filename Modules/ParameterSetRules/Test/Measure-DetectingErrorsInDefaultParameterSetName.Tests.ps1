@@ -3,9 +3,8 @@
 if (Test-Path env:APPVEYOR_BUILD_FOLDER)
 { 
   $M=Import-module "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" -Pass 
-  
-  $Path="$env:APPVEYOR_BUILD_FOLDER\Modules\ParameterSetRules\Test\DefaultParameterSetName"
-  $CustomRulePath="$env:APPVEYOR_BUILD_FOLDER\Modules\ParameterSetRules\ParameterSetRules.psd1"
+  $Path="$PSScriptAnalyzerRulesDelivery\\ParameterSetRules\Test\DefaultParameterSetName"
+  $CustomRulePath="$PSScriptAnalyzerRulesDelivery\\Modules\ParameterSetRules\ParameterSetRules.psm1"
 }
 else
 { 
