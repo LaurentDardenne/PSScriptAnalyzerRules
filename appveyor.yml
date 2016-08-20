@@ -22,12 +22,11 @@ install:
         $destination = "$ModulePath\DTW.PS.FileSystem.zip"
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
-         #remove-item "$ModulePath\Tests" -Force -Recurse 
         
         $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
         $destination = "$ModulePath\ReportUnit"
          Invoke-WebRequest $source -OutFile $destination
-         Expand-Archive -Path $destination  -DestinationPath $ModulePath
+         Expand-Archive -Path "$destination"  -DestinationPath $ModulePath
         
         $env:PSModulePath +=";$ModulePath"
 
