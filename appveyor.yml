@@ -35,6 +35,8 @@ build_script:
 
 test_script:
   - ps: |
+        Write-host "--> PSScriptAnalyzerRulesDelivery=$PSScriptAnalyzerRulesDelivery"
+        Write-host "--> env:APPVEYOR_BUILD_FOLDER=$env:APPVEYOR_BUILD_FOLDER"
         Import-Module PsScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
