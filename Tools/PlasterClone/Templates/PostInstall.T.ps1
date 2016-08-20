@@ -1,9 +1,9 @@
 ﻿#PostInstallClone 
 #Project PSScriptAnalyzerRules   
 
-$Delivry="$('<%=${PLASTER_PARAM_Delivry}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules"   
+$Delivery="$('<%=${PLASTER_PARAM_Delivery}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules"   
 $Logs="$('<%=${PLASTER_PARAM_Logs}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules"
-$Delivry,$logs|
+$Delivery,$logs|
  Foreach { 
    if (!(Test-Path $_)
    ( New-Item $_ -ItemType Directory > $null }

@@ -41,6 +41,19 @@ Function NewDiagnosticRecord{
              $PSCmdlet.MyInvocation.InvocationName,$Severity,$null
 }
 
+function TestSequential{
+#La collection doit être triée
+param([int[]]$List)
+  $Count=$List.Count
+  for ($i = 1; $i -lt $Count; $i++)
+  {
+     if ($List[$i] -ne $List[$i - 1] + 1)
+     {return $false}
+  }
+  return $true
+}# TestSequential
+
+
 <#
 .SYNOPSIS
     Detecting errors in DefaultParameterSetName
@@ -70,6 +83,7 @@ Function NewDiagnosticRecord{
    
 .NOTES
   None
+  Bug https://windowsserver.uservoice.com/forums/301869-powershell/suggestions/11088147-parameterset-names-should-not-be-case-sensitive
 #>
 Function Measure-DetectingErrorsInDefaultParameterSetName{
 
@@ -93,7 +107,7 @@ process {
     $ParamBlock=$FunctionDefinitionAst.Body.ParamBlock
     $DebugLogger.PSDebug("Paramblock is null : $($null -eq $ParamBlock)") #<%REMOVE%>
     if ($null -eq $ParamBlock)
-    { return } #minimal function code
+    { return } 
     $DebugLogger.PSDebug("ParamBlock.Attributes.Count: $($ParamBlock.Attributes.Count)") #<%REMOVE%>
     
       #note: si plusieurs attributs [CmdletBinding] existe, la méthode CmdletBinding() renvoi le premier trouvé 
@@ -101,7 +115,7 @@ process {
     $DPS_Name=$CBA.NamedArguments.Where({$_.ArgumentName -eq 'DefaultParameterSetName'}).Argument.Value
   
       #Récupère les noms de jeux 
-      #Les paramètres communs sont dans le jeu nommé '__AllParameterSets'
+      #Les paramètres communs sont dans le jeu nommé '__AllParameterSets' créé à l'exécution
     [string[]] $ParameterSets=$ParamBlock.Parameters.Attributes.NamedArguments.Where({$_.ArgumentName -eq 'ParameterSetName'}).Argument.Value|
                     Select-Object -Unique
     $SetCount=$ParameterSets.Count
@@ -116,12 +130,12 @@ process {
     
     if (($null -eq $DPS_Name) -and ($SetCount -gt 1))
     {  
-       #todo : Pour certaines constructions basées sur les paramètres obligatoire (ex: Pester.Set-ScriptBlockScope)
-       #       ce warning ne devrait pas se déclencher.
+       #todo : Pour certaines constructions basées sur les paramètres obligatoire (ex: Pester.Set-ScriptBlockScope) #<%REMOVE%>
+       #       ce warning ne devrait pas se déclencher.                                                             #<%REMOVE%>
       $result.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning)) > $null 
     } 
 
-    # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires
+    # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires                                                      
     # Pour I_PsnRedundant il y a 1,n déclarations redondantes mais pour I_DpsUnnecessary il y a 1 déclaration inutile
     if ((($null -ne $DPS_Name) -and ($SetCount -eq 1) -and ($DPS_Name -ceq  $ParameterSets[0])) -or (($null -eq $DPS_Name) -and ($SetCount -eq 1))) 
     {       
@@ -154,7 +168,6 @@ process {
     }
     if (($SetCount -gt 1) -or (($null -ne $DPS_Name) -and ($SetCount -eq  1)))
     {
-        #bug https://windowsserver.uservoice.com/forums/301869-powershell/suggestions/11088147-parameterset-names-should-not-be-case-sensitive
        $ParameterSets += $DPS_Name    
        $CaseSensitive=[System.Collections.Generic.HashSet[String]]::new($ParameterSets,[StringComparer]::InvariantCulture)
        $CaseInsensitive=[System.Collections.Generic.HashSet[String]]::new($ParameterSets,[StringComparer]::InvariantCultureIgnoreCase)
@@ -189,41 +202,28 @@ process {
 }#Measure-DetectingErrorsInDefaultParameterSetName
 
 # #todo à adapter
-Function Test-ParameterSet{
+Function Measure-DetectingErrorsInParameterList{         
 <#
 .SYNOPSIS
    Détermine si les jeux de paramètres d'une commande sont valides.
-   Un jeux de paramètres valide doit contenir au moins un paramètre unique et
+   Un jeux de paramètres valide :
    les numéros de positions de ses paramètres doivent se suivre et ne pas être dupliqué.
    Les noms de paramètres débutant par un chiffre invalideront le test.
 #>  
- param (
-   #Nom de la commande à tester
-  [parameter(Mandatory=$True,ValueFromPipeline=$True)]
-  [string]$Command  #todo CommandInfo ET CommandName
- ) 
-begin {
- function TestSequential{
-  #La collection doit être triée
-  param([int[]]$List)
-    $Count=$List.Count
-    for ($i = 1; $i -lt $Count; $i++)
-    {
-       if ($List[$i] -ne $List[$i - 1] + 1)
-       {return $false}
-    }
-    return $true
- }# TestSequential
-}#end
+ [CmdletBinding()]
+ [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
 
-process {
-  $Cmd=Get-Command $Command
-  $DebugLogger.PSDebug("Test $Command") #<%REMOVE%>
-  
-     #bug PS : https://connect.microsoft.com/PowerShell/feedback/details/653708/function-the-metadata-for-a-function-are-not-returned-when-a-parameter-has-an-unknow-data-type
-  $oldEAP,$ErrorActionPreference=$ErrorActionPreference,'Stop'
-   $SetCount=$Cmd.get_ParameterSets().count
-  $ErrorActionPreference=$oldEAP
+ Param(
+       [Parameter(Mandatory = $true)]
+       [ValidateNotNullOrEmpty()]
+       [System.Management.Automation.Language.FunctionDefinitionAst]
+      $FunctionDefinitionAst
+ )
+
+process { 
+  $FunctionName=$FunctionDefinitionAst.Name
+  $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
+  $DebugLogger.PSDebug("Check the function '$FunctionName'") #<%REMOVE%> 
 
   $_AllNames=@($Cmd.ParameterSets|
             Foreach {
@@ -236,10 +236,10 @@ process {
             })
 
   $Sets=[psCustomObject]@{
-   PSTypename='TestParameterSetInformation'
-   CommandName=$Cmd.Name
-   Set=new-object System.Collections.ArrayList
-   isValid=$false
+     PSTypename='TestParameterSetInformation'
+     CommandName=$Cmd.Name
+     Set=new-object System.Collections.ArrayList
+     isValid=$false
   }                          
   if ($_AllNames.Count -eq 0 ) 
   { return $Sets  }

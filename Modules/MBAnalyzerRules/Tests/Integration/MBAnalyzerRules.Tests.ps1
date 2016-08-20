@@ -1,4 +1,4 @@
-
+﻿
 Describe "Testing rule Measure-PascalCase against ExampleScript.ps1" {
 
     $ExampleResults = Invoke-ScriptAnalyzer -Path "$($PSScriptRoot)\..\..\ExampleScript.ps1" -CustomRulePath "$($PSScriptRoot)\..\..\MBAnalyzerRules.psm1"

@@ -3,11 +3,13 @@
 
 Task default -Depends CreateZip 
 
-Task CreateZip -Depends Delivery,ValideParameterSet,TestBomFinal {
+Task CreateZip -Depends Delivery,TestBomFinal,Pester {
 
-  $zipFile = "$env:\Temp\PSScriptAnalyzerRules.zip"
+  $zipFile = "$env:Temp\PSScriptAnalyzerRules.zip"
+  if (Test-Path $zipFile)
+  { Remove-item $zipFile } 
   Add-Type -assemblyname System.IO.Compression.FileSystem
-  [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRulesDelivry, $zipFile)
+  [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRulesDelivery, $zipFile)
   if (Test-Path env:APPVEYOR)
   { Push-AppveyorArtifact $zipFile }     
 }
@@ -17,48 +19,38 @@ Task Delivery -Depends Clean,RemoveConditionnal {
 $VerbosePreference='Continue'
  
 #log4Net config
-# on copie la config de dev nécessaire au build. 
-   Copy "$PSScriptAnalyzerRulesVcs\Log4Net.Config.xml" "$PSScriptAnalyzerRulesLivraison"
+# on copie la config de dev nécessaire au build.
+   if ($Configuration -eq "Debug") 
+   { Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRulesLog4Posh.Config.xml" "$PSScriptAnalyzerRulesDelivery" }
 
 #Doc xml localisée
    #US
-   Copy "$PSScriptAnalyzerRulesVcs\en-US\PSScriptAnalyzerRules.Resources.psd1" "$PSScriptAnalyzerRulesLivraison\en-US\PSScriptAnalyzerRules.Resources.psd1" 
-   Copy "$PSScriptAnalyzerRulesVcs\en-US\about_PSScriptAnalyzerRules.help.txt" "$PSScriptAnalyzerRulesLivraison\en-US\about_PSScriptAnalyzerRules.help.txt"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.Resources.psd1" "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.Resources.psd1" 
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\en-US\about_ParameterSetRules.help.txt" "$PSScriptAnalyzerRulesDelivery\en-US\about_ParameterSetRules.help.txt"
 
   #Fr 
-   Copy "$PSScriptAnalyzerRulesVcs\fr-FR\${PLASTER_PARAM_ProjectName}.Resources.psd1" "$PSScriptAnalyzerRulesLivraison\fr-FR\PSScriptAnalyzerRules.Resources.psd1"
-   Copy "$PSScriptAnalyzerRulesVcs\fr-FR\about_PSScriptAnalyzerRules.help.txt" "$PSScriptAnalyzerRulesLivraison\fr-FR\about_PSScriptAnalyzerRules.help.txt"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\fr-FR\ParameterSetRules.Resources.psd1" "$PSScriptAnalyzerRulesDelivery\fr-FR\ParameterSetRules.Resources.psd1"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\fr-FR\about_ParameterSetRules.help.txt" "$PSScriptAnalyzerRulesDelivery\fr-FR\about_ParameterSetRules.help.txt"
  
-
-#Demos
-   Copy "$PSScriptAnalyzerRulesVcs\Demos" "$PSScriptAnalyzerRulesLivraison\Demos" -Recurse
-
-#PS1xml   
-
-#Licence                         
-
 #Module
-      #$PSScriptAnalyzerRules.psm1 est créé par la tâche RemoveConditionnal
-   Copy "$PSScriptAnalyzerRulesVcs\PSScriptAnalyzerRules.psd1" "$PSScriptAnalyzerRulesLivraison"
+      #ParameterSetRules.psm1 et ParameterSetRules.psd1 sont créés par la tâche RemoveConditionnal
    
-#Setup
-   Copy "$PSScriptAnalyzerRulesSetup\PSScriptAnalyzerRulesSetup.ps1" "$PSScriptAnalyzerRulesLivraison"
-
 #Other 
-   Copy "$PSScriptAnalyzerRulesVcs\Revisions.txt" "$PSScriptAnalyzerRulesLivraison"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Revisions.txt" "$PSScriptAnalyzerRulesDelivery"
 } #Delivery
 
-Task RemoveConditionnal -Depend TestLocalizedData {
+Task RemoveConditionnal { #-Depend TestLocalizedData {
 #Traite les pseudo directives de parsing conditionnelle
   
    $VerbosePreference='Continue'
    ."$PSScriptAnalyzerRulesTools\Remove-Conditionnal.ps1"
    Write-debug "Configuration=$Configuration"
-   Dir "$PSScriptAnalyzerRulesVcs\PSScriptAnalyzerRules.psm1"|
+   Dir "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1",
+       "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"|
     Foreach {
       $Source=$_
       Write-Verbose "Parse :$($_.FullName)"
-      $CurrentFileName="$PSScriptAnalyzerRulesLivraison\$($_.Name)"
+      $CurrentFileName="$PSScriptAnalyzerRulesDelivery\$($_.Name)"
       Write-Warning "CurrentFileName=$CurrentFileName"
       if ($Configuration -eq "Release")
       { 
@@ -81,45 +73,26 @@ Task RemoveConditionnal -Depend TestLocalizedData {
         Get-Content -Path $_ -ReadCount 0 -Encoding UTF8|
          Remove-Conditionnal -ConditionnalsKeyWord 'NODEBUG' -Include -Container $Source|
          Set-Content -Path $CurrentFileName -Force -Encoding UTF8       
-         
       }
     }#foreach
 } #RemoveConditionnal
 
-Task TestLocalizedData -ContinueOnError {
- ."$PSScriptAnalyzerRulesTools\Test-LocalizedData.ps1"
-
- $SearchDir="$PSScriptAnalyzerRulesVcs"
- Foreach ($Culture in $Cultures)
- {
-   Dir "$SearchDir\PSScriptAnalyzerRules.psm1"|          
-    Foreach-Object {
-       #Construit un objet contenant des membres identiques au nombre de 
-       #paramètres de la fonction Test-LocalizedData 
-      New-Object PsCustomObject -Property @{
-                                     Culture=$Culture;
-                                     Path="$SearchDir";
-                                       #convention de nommage de fichier d'aide
-                                     LocalizedFilename="$($_.BaseName)LocalizedData.psd1";
-                                     FileName=$_.Name;
-                                       #convention de nommage de variable
-                                     PrefixPattern="$($_.BaseName)Msgs\."
-                                  }
-    }|   
-    Test-LocalizedData -verbose
- }
-} #TestLocalizedData
+#Task TestLocalizedData -ContinueOnError {
 
 Task Clean -Depends Init {
 # Supprime, puis recrée le dossier de livraison   
 
    $VerbosePreference='Continue'
-   Remove-Item $PSScriptAnalyzerRulesLivraison -Recurse -Force -ea SilentlyContinue
-   "$PSScriptAnalyzerRulesLivraison\en-US", 
-   "$PSScriptAnalyzerRulesLivraison\fr-FR", 
-   "$PSScriptAnalyzerRulesLivraison\FormatData",
-   "$PSScriptAnalyzerRulesLivraison\TypeData",
-   "$PSScriptAnalyzerRulesLivraison\Logs"|
+   Remove-Item $PSScriptAnalyzerRulesDelivery -Recurse -Force -ea SilentlyContinue
+   
+   $Directories=@(
+     "$PSScriptAnalyzerRulesDelivery\en-US", 
+     "$PSScriptAnalyzerRulesDelivery\fr-FR"
+   )
+   if ($Configuration -eq "Debug") 
+   { $Directories +="$PSScriptAnalyzerRulesDelivery\Logs" }
+   
+   $Directories|
    Foreach {
     md $_ -Verbose -ea SilentlyContinue > $null
    } 
@@ -153,8 +126,8 @@ Task TestBOMFinal {
 
 #Validation de l'encodage des fichiers APRES la génération  
   
-  Write-Host "Validation de l'encodage des fichiers du répertoire : $PSScriptAnalyzerRulesLivraison"
-  $InvalidFiles=@(&"$PSScriptAnalyzerRulesTools\Test-BOMFile.ps1" $PSScriptAnalyzerRulesLivraison)
+  Write-Host "Validation de l'encodage des fichiers du répertoire : $PSScriptAnalyzerRulesDelivery"
+  $InvalidFiles=@(&"$PSScriptAnalyzerRulesTools\Test-BOMFile.ps1" $PSScriptAnalyzerRulesDelivery)
   if ($InvalidFiles.Count -ne 0)
   { 
      $InvalidFiles |Format-List *
@@ -162,38 +135,36 @@ Task TestBOMFinal {
   }
 } #TestBOMFinal
 
-Task ValideParameterSet {
-  # requiert PS V3 pour la vérification
+Task Pester -Depends PSScriptAnalyzer { 
+  cd  "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Test"
+  $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
+  $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
+  C:\Dev\Reportunit\ReportUnit.exe
+  #  http://ottomatt.pagesperso-orange.fr/Temp/Appveyor/PSScriptAnalyzerRulesReport.html
 
-  ."$PSScriptAnalyzerRulesTools\New-FileNameTimeStamped.ps1"
-  ."$PSScriptAnalyzerRulesTools\Test-DefaultParameterSetName.ps1"
-  ."$PSScriptAnalyzerRulesTools\Test-ParameterSet.ps1"
-  Import-Module "$PSScriptAnalyzerRulesLivraison\PSScriptAnalyzerRules.psd1" -global
-  $Module=Import-Module "$PSScriptAnalyzerRulesLivraison\PSScriptAnalyzerRules.psd1" -PassThru
-  $WrongParameterSet= @(
-    $Module.ExportedFunctions.GetEnumerator()|
-     Foreach-Object {
-       Test-DefaultParameterSetName -Command $_.Key |
-       Where-Object {-not $_.isValid} |
-       Foreach-Object { 
-         Write-Warning "[$($_.CommandName)]: Le nom du jeu par défaut $($_.Report.DefaultParameterSetName) est invalide."
-         $_
-       }
-      
-       Get-Command $_.Key |
-        Test-ParameterSet |
-        Where-Object {-not $_.isValid} |
-        Foreach-Object { 
-          Write-Warning "[$($_.CommandName)]: Le jeu $($_.ParameterSetName) est invalide."
-          $_
-        }
-     }
-  )
-  if ($WrongParameterSet.Count -gt 0) 
-  {
-    $FileName=New-FileNameTimeStamped "$PSScriptAnalyzerRulesLogs\WrongParameterSet.ps1"
-    $WrongParameterSet |Export-CliXml $FileName
-    throw "Des fonctions déclarent des jeux de paramétres erronés. Voir les détails dans le fichier :`r`n $Filename"
+  #(New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile
+  if ($Results.FailedCount -gt 0) { 
+      throw "Pester : $($Results.FailedCount) tests ont échoués."
+  }   
+}#Pester
+
+Task PSScriptAnalyzer {
+  Write-Host "Analyse du code des scripts"
+  Import-Module PsScriptAnalyzer
+  $Params=@{
+    Path="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1"
+    CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" 
+    #Severity='Error'
+    #ErrorAction='SilentlyContinue'
   }
-}#ValideParameterSet
+  $Results = Invoke-ScriptAnalyzer @Params
+  If ($Results) {
+    $ResultString = $Results | Out-String
+    Write-host 'PSScriptAnalyzer renvot des erreurs'
+    Write-Warning $ResultString
+    Throw "Invoke-ScriptAnalyzer failed"
+  }
+  Else 
+  { Write-host 'PsScriptAnalyzer réussite de l''analyse' -fore green }
+}#PSScriptAnalyzer
 

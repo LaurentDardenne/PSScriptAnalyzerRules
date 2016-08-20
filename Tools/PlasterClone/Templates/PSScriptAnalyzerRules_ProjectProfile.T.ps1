@@ -8,7 +8,7 @@ if ( $null -eq [System.Environment]::GetEnvironmentVariable("ProfilePSScriptAnal
 { [Environment]::SetEnvironmentVariable("ProfilePSScriptAnalyzerRules",$VcsPathRepository, "User") }
 
  # Variable spécifiques au poste de développement
-$PSScriptAnalyzerRulesDelivry= "$('<%=${PLASTER_PARAM_Delivry}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules"   
+$PSScriptAnalyzerRulesDelivery= "$('<%=${PLASTER_PARAM_Delivery}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules"   
 $PSScriptAnalyzerRulesLogs= "$('<%=${PLASTER_PARAM_Logs}%>'.TrimEnd('\','/'))\PSScriptAnalyzerRules" 
 
  # Variable communes à tous les postes, leurs contenu est spécifique au poste de développement

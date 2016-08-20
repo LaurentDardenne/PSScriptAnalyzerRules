@@ -12,7 +12,7 @@
 RootModule = 'ParameterSetRules.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.2'
+ModuleVersion = '0.1.0.0'
 
 # ID used to uniquely identify this module
 GUID = 'cd244970-87c5-4d02-84f3-d29666f8fea4'

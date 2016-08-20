@@ -12,14 +12,14 @@ install:
         Install-Module PsScriptAnalyzer -force
         Install-Module Psake  -force
 
-        Register-PSRepository -Name PoshBuildTools -SourceLocation https://ci.appveyor.com/nuget/poshbuildtools
-        Install-Module PoshBuildTools -Scope CurrentUser -Force
+        #Register-PSRepository -Name PoshBuildTools -SourceLocation https://ci.appveyor.com/nuget/poshbuildtools
+        #Install-Module PoshBuildTools -Scope CurrentUser -Force
         
         $ModulePath='c:\projects\Modules'
         Md "$ModulePath\DTW.PS.FileSystem" > $null
         
         $source = 'http://www.dtwconsulting.com/PS/Downloads/DTW.PS.FileSystem.zip'
-        $destination = "$ModulePath\\DTW.PS.FileSystem.zip"
+        $destination = "$ModulePath\DTW.PS.FileSystem.zip"
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
          remove-item "$ModulePath\Tests" -Force -Recurse 
@@ -29,14 +29,21 @@ install:
 
 build_script:
   - ps: |
-        . $env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1
+        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
         Import-Module Psake
-        . $env:APPVEYOR_BUILD_FOLDER\Tools\Build.ps1
+        . "$PSScriptAnalyzerRulesVcs\Tools\Build.ps1"
 
 test_script:
   - ps: |
+        Import-Module PsScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
-        $Results = Invoke-ScriptAnalyzer -Path "$PSScriptAnalyzerRuleDelivryModules\ParameterSetRules\ParameterSetRules.psm1 -Severity Error -ErrorAction SilentlyContinue
+        $Param=@{
+          Path="$PSScriptAnalyzerRulesDelivry\ParameterSetRules.psm1"
+          CustomRulePath="$PSScriptAnalyzerRulesDelivry\ParameterSetRules.psd1" 
+          #Severity='Error'
+          #ErrorAction='SilentlyContinue'
+        }
+        $Results = Invoke-ScriptAnalyzer @Params
         If ($Results) {
           $ResultString = $Results | Out-String
           Write-Warning $ResultString
@@ -51,7 +58,7 @@ test_script:
           Update-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Passed
         }
         
-        cd  "C:\projects\psscriptanalyzer\Modules\ParameterSetRules\Test"
+        cd  "$env:APPVEYOR_BUILD_FOLDER\Modules\ParameterSetRules\Test"
         $ruleTestResults = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ruleTestResultsFile -PassThru
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $ruleTestResultsFile))
         if ($ruleTestResults.FailedCount -gt 0) { 
@@ -62,10 +69,5 @@ test_script:
 on_finish:
   - ps: |
         Add-AppveyorTest -Name "Finish" -Outcome Running
-        $zipFile ="c:\projects\Modules\PSScriptAnalyzerRule.zip"
-        Add-Type -assemblyname System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRuleDelivry, $zipFile)
-        @(
-            # You can add other artifacts here
-            (ls $zipFile)
-        ) | % { Push-AppveyorArtifact $_.FullName }
+        $zipFile = "$env:Temp\PSScriptAnalyzerRules.zip"
+        Push-AppveyorArtifact $zipFile
