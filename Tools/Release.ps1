@@ -139,7 +139,8 @@ Task Pester -Depends PSScriptAnalyzer {
   cd  "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Test"
   $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
   $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
-  C:\Dev\Reportunit\ReportUnit.exe
+  #C:\Dev\Reportunit\ReportUnit.exe "$env:Temp\PSScriptAnalyzerRulesPester.xml" c:\temp\report.html
+  #http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip
   #  http://ottomatt.pagesperso-orange.fr/Temp/Appveyor/PSScriptAnalyzerRulesReport.html
 
   #(New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $ResultsFile

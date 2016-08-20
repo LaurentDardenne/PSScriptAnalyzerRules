@@ -35,12 +35,10 @@ build_script:
 
 test_script:
   - ps: |
-        Write-host "--> PSScriptAnalyzerRulesDelivery=$PSScriptAnalyzerRulesDelivery"
-        Write-host "--> env:APPVEYOR_BUILD_FOLDER=$env:APPVEYOR_BUILD_FOLDER"
         Import-Module PsScriptAnalyzer
         Add-AppveyorTest -Name "PsScriptAnalyzer" -Outcome Running
         $Params=@{
-          Path="$PSScriptAnalyzerRulesDelivry\ParameterSetRules.psm1"
+          Path="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psm1"
           CustomRulePath="$PSScriptAnalyzerRulesDelivery\ParameterSetRules.psd1" 
           #Severity='Error'
           #ErrorAction='SilentlyContinue'
