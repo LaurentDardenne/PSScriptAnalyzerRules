@@ -46,6 +46,7 @@ Task RemoveConditionnal { #-Depend TestLocalizedData {
    $VerbosePreference='Continue'
    ."$PSScriptAnalyzerRulesTools\Remove-Conditionnal.ps1"
    Write-debug "Configuration=$Configuration"
+   Write-Warning "Traite la configuration $Configuration" }
    Dir "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1",
        "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"|
     Foreach {
@@ -55,7 +56,6 @@ Task RemoveConditionnal { #-Depend TestLocalizedData {
       Write-Warning "CurrentFileName=$CurrentFileName"
       if ($Configuration -eq "Release")
       { 
-         Write-Warning "`tTraite la configuration Release"
          #Supprime les lignes de code de Debug et de test
          #On traite une directive et supprime les lignes demandées. 
          #On inclut les fichiers.       
@@ -68,7 +68,7 @@ Task RemoveConditionnal { #-Depend TestLocalizedData {
       { 
          #On ne traite aucune directive et on ne supprime rien. 
          #On inclut uniquement les fichiers.
-        Write-Warning "`tTraite la configuration DEBUG" 
+
          #Directive inexistante et on ne supprime pas les directives
          #sinon cela génére trop de différences en cas de comparaison de fichier
         Get-Content -Path $_ -ReadCount 0 -Encoding UTF8|
@@ -136,7 +136,7 @@ Task TestBOMFinal {
   }
 } #TestBOMFinal
 
-Task Pester -Depends PSScriptAnalyzer {
+Task Pester -Precondition { -not (Test-Path env:APPVEYOR)} -Depends PSScriptAnalyzer {
    #Execute les tests via la config de Appveyor, ansi on renseigne l'onglet Test :
    # https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules/build/tests
   if (Test-Path env:APPVEYOR)
@@ -154,9 +154,7 @@ Task Pester -Depends PSScriptAnalyzer {
   }   
 }#Pester
 
-Task PSScriptAnalyzer {
-  if (Test-Path env:APPVEYOR)
-  {  return }  
+Task PSScriptAnalyzer -Precondition { -not (Test-Path env:APPVEYOR) } {
   Write-Host "Analyse du code des scripts"
   Import-Module PsScriptAnalyzer
   $Params=@{

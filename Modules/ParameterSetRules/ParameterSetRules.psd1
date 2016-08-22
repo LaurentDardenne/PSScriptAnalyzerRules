@@ -71,7 +71,7 @@ RequiredModules=@(
 # NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = 'Measure*'
+FunctionsToExport = @('Measure*','New-TestSetParameter')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'

@@ -1,1 +1,55 @@
-﻿todo 
+﻿TOPIC
+    about_ParameterSetRules
+
+SHORT DESCRIPTION
+    Décrit les régles définies dans le module ParameterSetRules.psm1
+
+LONG DESCRIPTION
+    Une fonction peut déclarer des jeux de paramètres via l'attribut [Parameter()],
+    on utilise sa propriété 'ParametersetName', exemple : 
+      [Parameter(ParametersetName="NOM")]
+    
+    Hormis les erreur de syntaxes lors du parsing ou d'une erreur de paramétrage ambigu lors 
+    de l'exécution, aucun contrôle fonctionnel n'est effectué par Powerhell sur la 
+    cohérence des jeux déclarés.
+    
+    Il est tout à fait possible de déclarer un seul nom de jeu de paramètre, ce qui n'a pas d'utilité.
+    A moins d'être en phase de développement, ce cas devrait être évité.
+    
+    Lors de la déclaration de plusieurs jeux de paramètres, il est recommandé de déclarer celui 
+    par défaut à l'aide de l'attribut [CmdletBinding()] on utilise sa propriété 'DefaultParameterSetName', 
+    exemple :
+      [CmdletBinding(defaultparameterSetName = "NOM")])]   
+    Son oubli devrait être notifié.
+   
+    Un nom de jeu de paramètre peut être nommé '__AllParameterSets' qui est le nom de jeux par défaut des 
+    paramètres qui n'appartiennent à aucun des jeux déclarés. Bien qu'improbable, cet usage devrait être évité.
+   
+    De plus, Powershell bien que par défaut insensible à la casse, permet de différencier deux noms de 
+    jeu de paramètres identique mais ayant une casse différente. 
+    Par exemple le nom 'Jeu' est différent du nom 'jeu', ce qui crée un bug fonctionnel.  
+
+    Ces points sont couverts par la régle 'Measure-DetectingErrorsInDefaultParameterSetName'.
+   
+
+    Autre point à analyser, les noms de paramètres ne doivent pas commencer par un chiffre, 
+    en effet le parseur considère, par exemple, la combinaison -32bits comme une valeur d'argument 
+    de type entier et pas comme un nom de paramètre. Cette valeur sera associée au premier paramètre positionnel !
+    Ceci est dû au fait que le parsing des noms de variable et des nom de paramètre est différent.
+    Un nom de variable peut débuter par un nombre, mais pas un nom de paramètre.
+   
+    Enfin, pour les paramètres déclarant des positions, Powershell ne vérifie pas si tous les numéros 
+    des positions sont séquentiel et si chaque numéro est unique dans la liste du jeu de paramètres.
+
+    todo OutputTypeAttibut
+    Si déclaré : le nom du jeu doit exister, ne pas être dupliqué ?
+
+    
+  Diagnostic PSScripAnalyser    
+   La régle 'Measure-DetectingErrorsInDefaultParameterSetName' renvoit les diagnostics suivants :
+   todo
+   
+    
+SEE ALSO
+    https://windowsserver.uservoice.com/forums/301869-powershell/suggestions/11088147-parameterset-names-should-not-be-case-sensitive
+    
