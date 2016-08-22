@@ -46,7 +46,7 @@ Task RemoveConditionnal { #-Depend TestLocalizedData {
    $VerbosePreference='Continue'
    ."$PSScriptAnalyzerRulesTools\Remove-Conditionnal.ps1"
    Write-debug "Configuration=$Configuration"
-   Write-Warning "Traite la configuration $Configuration" }
+   Write-Warning "Traite la configuration $Configuration"
    Dir "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1",
        "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"|
     Foreach {
@@ -166,7 +166,7 @@ Task PSScriptAnalyzer -Precondition { -not (Test-Path env:APPVEYOR) } {
   $Results = Invoke-ScriptAnalyzer @Params -IncludeDefaultRules
   If ($Results) {
     $ResultString = $Results | Out-String
-    Write-host 'PSScriptAnalyzer renvot des erreurs'
+    Write-host 'PSScriptAnalyzer renvoit des erreurs'
     Write-Warning $ResultString
     Throw "Invoke-ScriptAnalyzer failed"
   }

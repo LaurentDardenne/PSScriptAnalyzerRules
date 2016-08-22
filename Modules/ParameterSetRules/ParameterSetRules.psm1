@@ -121,7 +121,40 @@ function GetParameter{
 }#GetParameter    
 
 
+<#
+.SYNOPSIS
+    Detecting errors in DefaultParameterSetName
+
+.DESCRIPTION
+   Détermine si le nom du paramètre DefaultParameterSetName, de l'attribut 
+   CmdletBinding, est présent dans la liste des noms de jeux de paramètre. 
+.
+   Si DefaultParameterSetName n'est pas utilisé, cette fonction renvoie $true.
+.   
+   Si DefaultParameterSetName est utilisé et qu'aucun autre jeu de paramètre 
+   n'est déclaré, cette fonction renvoie $true.
+.
+   Si DefaultParameterSetName est utilisé et que son contenu ne correspond à 
+   aucun nom de jeu de paramètre déclaré, cette fonction renvoie $false.
+   Ce test est sensible à la casse.
+   Le jeux de paramètre nommé 'Setup' est différent de celui nommé 'setup'.
+
+.EXAMPLE
+   Measure-DetectingErrorsInDefaultParameterSetName $FunctionDefinitionAst
+    
+.INPUTS
+  [System.Management.Automation.Language.FunctionDefinitionAst]
+  
+.OUTPUTS
+   [PSObject]
+   
+.NOTES
+  None
+  
+#>
 function New-TestSetParameter{
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions","",
+                                                     Justification="New-TestSetParameter do not change the system state, only the application 'context'")]
 #Génére le produit cartésien de chaque jeux de paramètre d'une commande (tools for Pester)
 #adapted from : #http://makeyourownmistakes.wordpress.com/2012/04/17/simple-n-ary-product-generic-cartesian-product-in-powershell-20/
  [CmdletBinding()]
@@ -168,12 +201,12 @@ function New-TestSetParameter{
     $isSwitch=($Parameter.parameterType.FullName -eq 'System.Management.Automation.SwitchParameter')
     Write-Debug "isSwitch=$isSwitch"
     $returnValue = @()
-    if ($valuesToAdd -ne $null)
+    if ($null -ne $valuesToAdd)
     {
       foreach ($value in $valuesToAdd)
       {
         Write-Debug "Add Value : $value "
-        if ($currentResult -ne $null)
+        if ($Null -ne $currentResult)
         {
           foreach ($result in $currentResult)
           {
@@ -227,12 +260,12 @@ function New-TestSetParameter{
       {
          #Api V4 et >
         $Values= $MyInvocation.MyCommand.Module.GetVariableFromCallersModule($Parameter.Name) #todo -ea SilentlyContinue
-        if ( $Values -ne $Null) 
+        if ( $null -ne $Values) 
         { $returnValue = AddToAll -Parameter $Parameter $returnValue $Values.Value }
         else
         { $PSCmdlet.WriteWarning("The variable $($Parameter.Name) is not defined, processing the next parameter.") } 
       }
-     New-Object PSObject -Property @{CommandName=$CommandName.Name;SetName=$Set.Name;Lines=$returnValue.Clone()}
+     New-Object PSObject -Property @{PSTypeName='CartesianProductOfParameters';CommandName=$CommandName.Name;SetName=$Set.Name;Lines=$returnValue.Clone()}
    }#foreach
   }#process
 } #New-TestSetParameter
@@ -488,21 +521,21 @@ Function Measure-DetectingErrorsInParameterList{
     
     #Une fois la liste construite on connait tous les psn
     #Pour celui nommé 'By défault' on doit ajouter tous ces paramètres à tous les autres PSN
-    $group=$ParametersList|Group-Object -Property PSN
-    $script:isSharedParameterSetName_Unique=($Group.Count -eq 1) -and ($Group.Name -eq $script:isSharedParameterSetName)
+    $Groups=$ParametersList|Group-Object -Property PSN
+    $script:isSharedParameterSetName_Unique=($Groups.Count -eq 1) -and ($Groups[0].Name -eq $script:isSharedParameterSetName)
     $OthersGroups=New-object System.Collections.Arraylist
-    $DefaultGroup=Foreach ($grp in $group) {
-     if ($grp.name -eq $script:SharedParameterSetName)
-     {$grp}
+    $DefaultGroup=Foreach ($group in $Groups) {
+     if ($group.name -eq $script:SharedParameterSetName)
+     {$group}
      else
-     {$OthersGroups.Add($grp) > $null}
+     {$OthersGroups.Add($group) > $null}
     }
     $DebugLogger.PSDebug("Complete ParametersList") #<%REMOVE%>
     if ($null -ne $DefaultGroup)
     {
-      Foreach ($grp in $OthersGroups)
+      Foreach ($group in $OthersGroups)
       {
-        $psnName=$grp.Name
+        $psnName=$group.Name
         Foreach ($parameter in $DefaultGroup.Group)
         {  
           $DebugLogger.PSDebug("add $psnname $parameter") #<%REMOVE%>   
@@ -525,8 +558,8 @@ Function Measure-DetectingErrorsInParameterList{
      # on regroupe une seconde fois pour déterminer s'il y a des duplications
      # et connaitre le nom des paramètres concernés.
      $GroupByPSN.Group|
-      Group Position|
-       Foreach {
+      Group-Object Position|
+       Foreach-Object {
          $ParameterName=$_.Group[0].Name   
          $DebugLogger.PSDebug("Parameter=$ParameterName") #<%REMOVE%>
          
@@ -546,8 +579,8 @@ Function Measure-DetectingErrorsInParameterList{
         } 
         $_      
        }|
-       Where { ($_.Count -gt 1) -and ($_.Name[0] -ne '-')}|
-       Foreach{
+       Where-Object { ($_.Count -gt 1) -and ($_.Name[0] -ne '-')}|
+       Foreach-Object{
         #Régle  3 : Les positions des paramètres d'un même jeu ne doivent pas être dupliqués
         #Ex 1,2,3 est correct, mais pas 1,2,3,1           
         $DebugLogger.PSDebug("`tRule : Duplicate position") #<%REMOVE%>
