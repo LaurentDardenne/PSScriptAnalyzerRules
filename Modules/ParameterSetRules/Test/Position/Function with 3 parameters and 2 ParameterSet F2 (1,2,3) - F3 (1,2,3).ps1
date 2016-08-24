@@ -1,4 +1,5 @@
 ﻿Function TestParameterSet{
+  [CmdletBinding(DefaultParameterSetName = "F2")]         
   Param (
     [Parameter(Position=1,ParametersetName="F2")]
    [string] $A,

@@ -1,4 +1,5 @@
 ﻿#<%ScriptAnalyzer categories%>. Tag : PSScriptAnalyzer, PSScriptAnalyzerRule, Analyze, Rule
+#https://github.com/PowerShell/PSScriptAnalyzer/issues/314
 #guideline : Gotchas, Refactoring, PSIssue/PSBehavior
 
 Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resources.psd1 -EA Stop
@@ -15,11 +16,10 @@ Import-module Log4Posh
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
    #Récupère le code d'une fonction publique du module Log4Posh (Prérequis)
    #et l'exécute dans la portée du module
+  #create $script:DebugLogger, $script:InfoLogger,$script:DefaultLogFile
 $sb=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
 &$sb $Script:lg4n_ModuleName "$psScriptRoot\ParameterSetRulesLog4Posh.Config.xml" $psScriptRoot
 #<UNDEF %DEBUG%>   
-
-$script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInvocation.MyCommand.ScriptBlock.Module.SessionState.InvokeCommand,$null)
 
 function Get-CommonParameter{ 
   [System.Management.Automation.Internal.CommonParameters].GetProperties().Names
@@ -39,237 +39,13 @@ $script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInv
 
 
 Function NewDiagnosticRecord{
- param ($Message,$Severity)
- #caution : use the parent scope
- 
+ param ($Message,$Severity,$Ast)
    #DiagnosticRecord(string message, IScriptExtent extent, string ruleName, DiagnosticSeverity severity, 
    #                 string scriptPath, string ruleId = null, List<CorrectionExtent> suggestedCorrections = null)
  New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord" `
-             -ArgumentList $Message,$FunctionDefinitionAst.Extent,
+             -ArgumentList $Message,$Ast.Extent,
              $PSCmdlet.MyInvocation.InvocationName,$Severity,$null
 }
-
-function TestSequential{
-#La collection doit être triée
-param([int[]]$List)
-  
-  if ($List.Count -eq 1)
-  {return $true}
-  
-  $Count=$List.Count
-  for ($i = 1; $i -lt $Count; $i++)
-  {
-     if ($List[$i] -ne $List[$i - 1] + 1)
-     {return $false}
-  }
-  return $true
-}# TestSequential
-
-
-function GetParameter{
-  param($ParamBlock)
-   #todo déclaration [Parameter()] inutile
-
-   #Un jeu de paramètres ne peut être déduit de la position
-   #si aucun de ses paramètres n'est mandatory
-   #BUG PS: 
-   # une duplication de déclaration identique invalide le résultat de Get-Commande :
-   #   
-   #   [Parameter(Position=1,parameterSetName="Fonctionnalite3")]
-   #   [Parameter(Position=1,parameterSetName="Fonctionnalite3")]
-   #    [Switch] $C,
-   #
-   # Il reste possbile de déclarer ainsi
-   #   [Parameter(Position=1)]
-   #   [Parameter(parameterSetName="Fonctionnalite3")]
-   #    [Switch] $C,
-  
-
-  $DebugLogger.PSDebug("ParamBlock.Parameters.Count: $($ParamBlock.Parameters.Count)") #<%REMOVE%>
-  Foreach ($Parameter in $ParamBlock.Parameters)
-  {
-   $ParameterName=$Parameter.Name.VariablePath.UserPath
-   $PSN=$script:SharedParameterSetName
-   $Position=$script:PositionDefault
-   
-   foreach ($Attribute in $Parameter.Attributes)
-   {
-       if ($Attribute.TypeName.FullName -ne 'Parameter')
-       { continue }
-       if (($null -eq $Attribute.NamedArguments) -and ($null -eq $Attribute.PositionalArguments))
-       {
-         #régle 7: Un attribut [Parameter()] vide est inutile
-         $DebugLogger.PSDebug("`tRule : [Parameter()] vide") #<%REMOVE%>
-         $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : The parameter  '$ParameterName' declare an unnecessary ParameterAttribut." Error )) > $null
-       }
-       foreach ($NamedArgument in $Attribute.NamedArguments)
-       {
-          $ArgumentName=$NamedArgument.ArgumentName
-          if ($ArgumentName -eq 'ParameterSetName')
-          { $PSN=$NamedArgument.Argument.Value }
-          elseif ($ArgumentName -eq 'Position')
-          { $Position=$NamedArgument.Argument.Value}
-       }
-      $DebugLogger.PSDebug("Add '$ParameterName' into '$psn'") #<%REMOVE%>
-      [pscustomObject]@{
-       Name=$ParameterName
-       PSN=$psn
-       Position=$Position
-      }
-   }
-  }  
-}#GetParameter    
-
-
-<#
-.SYNOPSIS
-    Detecting errors in DefaultParameterSetName
-
-.DESCRIPTION
-   Détermine si le nom du paramètre DefaultParameterSetName, de l'attribut 
-   CmdletBinding, est présent dans la liste des noms de jeux de paramètre. 
-.
-   Si DefaultParameterSetName n'est pas utilisé, cette fonction renvoie $true.
-.   
-   Si DefaultParameterSetName est utilisé et qu'aucun autre jeu de paramètre 
-   n'est déclaré, cette fonction renvoie $true.
-.
-   Si DefaultParameterSetName est utilisé et que son contenu ne correspond à 
-   aucun nom de jeu de paramètre déclaré, cette fonction renvoie $false.
-   Ce test est sensible à la casse.
-   Le jeux de paramètre nommé 'Setup' est différent de celui nommé 'setup'.
-
-.EXAMPLE
-   Measure-DetectingErrorsInDefaultParameterSetName $FunctionDefinitionAst
-    
-.INPUTS
-  [System.Management.Automation.Language.FunctionDefinitionAst]
-  
-.OUTPUTS
-   [PSObject]
-   
-.NOTES
-  None
-  
-#>
-function New-TestSetParameter{
-  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions","",
-                                                     Justification="New-TestSetParameter do not change the system state, only the application 'context'")]
-#Génére le produit cartésien de chaque jeux de paramètre d'une commande (tools for Pester)
-#adapted from : #http://makeyourownmistakes.wordpress.com/2012/04/17/simple-n-ary-product-generic-cartesian-product-in-powershell-20/
- [CmdletBinding()]
- [OutputType([system.string])]
- param (
-   [parameter(Mandatory=$True,ValueFromPipeline=$True)]
-   [ValidateNotNull()]
-  [System.Management.Automation.CommandInfo] $CommandName,
-    
-    [ValidateNotNullOrEmpty()]
-    [Parameter(Position=0,Mandatory=$false)]
-  [string[]] $ParameterSetNames='__AllParameterSets',
-    
-    [ValidateNotNullOrEmpty()]
-  [string[]] $Exclude,
-  
-  [switch] $All
- )       
-
- begin {
-  function getValue{
-     if ($Value -eq $false)
-     {
-       Write-Debug "Switch is `$false, dont add the parameter name : $Result."
-       return "$result"
-     }
-     else
-     {
-       Write-Debug "Switch is `$true, add only the parameter name : $result$Bindparam"
-       return "$result$Bindparam"
-     }
-  }#getValue
-  
-  function AddToAll{
-   param (
-     [System.Management.Automation.CommandParameterInfo] $Parameter,
-     $currentResult, 
-     $valuesToAdd
-   )
-    Write-Debug "Treate '$($Parameter.Name)' parameter."
-    Write-Debug "currentResult =$($currentResult.Count -eq 0)"
-    $Bindparam=" -$($Parameter.Name)" 
-      #Récupère une information du type du paramètre et pas la valeur liée au paramètre
-    $isSwitch=($Parameter.parameterType.FullName -eq 'System.Management.Automation.SwitchParameter')
-    Write-Debug "isSwitch=$isSwitch"
-    $returnValue = @()
-    if ($null -ne $valuesToAdd)
-    {
-      foreach ($value in $valuesToAdd)
-      {
-        Write-Debug "Add Value : $value "
-        if ($Null -ne $currentResult)
-        {
-          foreach ($result in $currentResult)
-          {
-            if ($isSwitch) 
-            { $returnValue +=getValue } 
-            else
-            {
-              Write-Debug "Add parameter and value : $result$Bindparam $value"
-              $returnValue += "$result$Bindparam $value"
-            }
-          }#foreach
-        }
-        else
-        {
-           if ($isSwitch) 
-           { $returnValue +="$($CommandName.Name)$(getValue)" } 
-           else 
-           {
-             Write-Debug "Add parameter and value :: $Bindparam $value"
-             $returnValue += "$($CommandName.Name)$Bindparam $value"
-           }
-        }
-      }
-    }
-    else
-    {
-      Write-Debug "ValueToAdd is `$Null :$currentResult"
-      $returnValue = $currentResult
-    }
-    return $returnValue
-  }#AddToAll  
- }#begin
-
-  process {
-          
-   foreach ($Set in $CommandName.ParameterSets)
-   {
-      if (-not $All -and ($ParameterSetNames -notcontains $Set.Name)) 
-      { continue }
-      elseif ( $All -and ($Exclude -contains $Set.Name)) 
-      {
-        Write-Debug "Exclude $($Set.Name) "
-        continue
-      }
-      
-      $returnValue = @()
-      Write-Debug "Current set name is $($Set.Name) "
-      Write-Debug "Parameter count=$($Set.Parameters.Count) "
-      #Write-Debug "$($Set.Parameters|Select name|out-string) "
-      foreach ($parameter in $Set.Parameters)
-      {
-         #Api V4 et >
-        $Values= $MyInvocation.MyCommand.Module.GetVariableFromCallersModule($Parameter.Name) #todo -ea SilentlyContinue
-        if ( $null -ne $Values) 
-        { $returnValue = AddToAll -Parameter $Parameter $returnValue $Values.Value }
-        else
-        { $PSCmdlet.WriteWarning("The variable $($Parameter.Name) is not defined, processing the next parameter.") } 
-      }
-     New-Object PSObject -Property @{PSTypeName='CartesianProductOfParameters';CommandName=$CommandName.Name;SetName=$Set.Name;Lines=$returnValue.Clone()}
-   }#foreach
-  }#process
-} #New-TestSetParameter
-
 
 <#
 .SYNOPSIS
@@ -349,7 +125,7 @@ process {
     {  
        #Todo : Pour certaines constructions basées sur les paramètres obligatoire (ex: Pester.Set-ScriptBlockScope) #<%REMOVE%>
        #       ce warning ne devrait pas se déclencher.                                                             #<%REMOVE%>
-      $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning)) > $null 
+      $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning $FunctionDefinitionAst)) > $null 
     } 
 
     # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires                                                      
@@ -357,13 +133,13 @@ process {
     if ((($null -ne $DPS_Name) -and ($SetCount -eq 1) -and ($DPS_Name -ceq  $ParameterSets[0])) -or (($null -eq $DPS_Name) -and ($SetCount -eq 1))) 
     {       
        $DebugLogger.PSDebug("PSN redondant.") #<%REMOVE%>
-       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_PsnRedundant -F $FunctionName) Information )) > $null
+       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_PsnRedundant -F $FunctionName ) Information $FunctionDefinitionAst)) > $null
     }
     
     if (@($ParameterSets;$DPS_Name) -eq [System.Management.Automation.ParameterAttribute]::AllParameterSets)
     { 
        $DebugLogger.PSDebug("Le nom est '__AllParameterSets', ce nommage est improbable, mais autorisé") #<%REMOVE%>
-       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning )) > $null
+       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
     }
 
     if ($null -ne $DPS_Name) 
@@ -371,7 +147,7 @@ process {
        if (($SetCount -eq  0) -or (($SetCount -eq  1) -and ($DPS_Name -ceq  $ParameterSets[0])))
        {
           $DebugLogger.PSDebug("Dps seul est inutile") #<%REMOVE%>
-          $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information )) > $null
+          $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information $FunctionDefinitionAst)) > $null
        }
        else 
        {       
@@ -379,7 +155,7 @@ process {
           if (($ParameterSets.count -gt 0) -and ($DPS_Name -cnotin $ParameterSets))
           {
             $DebugLogger.PSDebug("Dps inutilisé") #<%REMOVE%>
-            $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.E_DpsInused -F $FunctionName) Error)) > $null
+            $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.E_DpsInused -F $FunctionName) Error $FunctionDefinitionAst)) > $null
           }
        }
     }
@@ -417,57 +193,168 @@ process {
                                                                              "DetectingErrorsInDefaultParameterSetName-$FunctionName", 
                                                                              "NotSpecified",
                                                                              $FunctionDefinitionAst
+     $DebugLogger.PSFatal($_.Exception.Message,$_.Exception) #<%REMOVE%>
      $PSCmdlet.ThrowTerminatingError($ER) 
   }       
  }#process
 }#Measure-DetectingErrorsInDefaultParameterSetName
 
+#---------------------------------------------------------------------------
+function TestSequential{
+#La collection doit être triée
+#Renvoie $true si le tableau contient une suite ordonbée de chiffres
+param([int[]]$List)
+  
+  if ($List.Count -eq 1)
+  {return $true}
+  
+  $Count=$List.Count
+  for ($i = 1; $i -lt $Count; $i++)
+  {
+     if ($List[$i] -ne $List[$i - 1] + 1)
+     {return $false}
+  }
+  return $true
+}# TestSequential
+
+
+function GetParameter{
+  param($ParamBlock, $ListDR,$Ast)
+   #Un jeu de paramètres ne peut être déduit de la position
+   #si aucun de ses paramètres n'est mandatory
+   #BUG PS: 
+   # une duplication de déclaration identique invalide le résultat de Get-Commande :
+   #   
+   #   [Parameter(Position=1,parameterSetName="Fonctionnalite3")]
+   #   [Parameter(Position=1,parameterSetName="Fonctionnalite3")]
+   #    [Switch] $C,
+   #
+   # Il reste possbile de déclarer ainsi
+   #   [Parameter(Position=1)]
+   #   [Parameter(parameterSetName="Fonctionnalite3")]
+   #    [Switch] $C,
+  
+
+  $DebugLogger.PSDebug("ParamBlock.Parameters.Count: $($ParamBlock.Parameters.Count)") #<%REMOVE%>
+  Foreach ($Parameter in $ParamBlock.Parameters)
+  {
+   $ParameterName=$Parameter.Name.VariablePath.UserPath
+   $PSN=$script:SharedParameterSetName
+   $Position=$script:PositionDefault
+   
+    #régle 1 : un nom de paramètre ne doit pas commencer par un chiffre,
+    # ni contenir certains caractères. Ceci pour les noms de paramètre ${+Name.Next*}
+   $isParameterNameValid=TestParameterName $FunctionName $ParameterName $Ast 
+   if ($null -ne $isParameterNameValid)  
+   { $ListDR.Add((NewDiagnosticRecord $isParameterNameValid Error $Ast)) > $null   } 
+               
+   
+   if ($Parameter.Attributes.Count -eq 0) 
+   {
+      $DebugLogger.PSDebug("Add '$ParameterName' into '$psn'") #<%REMOVE%>
+      [pscustomObject]@{
+       Name=$ParameterName
+       PSN=$psn
+       Position=$Position
+      }
+   }
+   else
+   { 
+     $Predicate= {
+        $args[0].TypeName.FullName -eq 'Parameter'
+     }
+     $All=$Parameter.Attributes.FindAll($Predicate,$true) 
+     if ($null -eq $All) 
+     {
+        $DebugLogger.PSDebug("Add '$ParameterName' into '$psn'") #<%REMOVE%>
+        [pscustomObject]@{
+         Name=$ParameterName
+         PSN=$psn
+         Position=$Position
+        }
+     }  
+     else
+     {
+        #todo parameter déclaré + fois sur le même jeux
+        #On ne considére que la première déclaration de [Parameter()] 
+       foreach ($Attribute in $Parameter.Attributes)
+       {
+         if ($Attribute.TypeName.FullName -eq 'Parameter')
+         {
+           if (($Attribute.NamedArguments.Count -eq 0) -and ($null -eq $Attribute.PositionalArguments.Count -eq 0))
+           {
+             #régle 6: Un attribut [Parameter()] vide est inutile
+             $DebugLogger.PSDebug("`tRule : [Parameter()] vide") #<%REMOVE%>
+             $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.W_PsnUnnecessaryParameterAttribut -F $FunctionName,$ParameterName) Warning $FunctionDefinitionAst)) > $null
+           }
+           else 
+           {
+             foreach ($NamedArgument in $Attribute.NamedArguments)
+             {
+                $ArgumentName=$NamedArgument.ArgumentName
+                if ($ArgumentName -eq 'ParameterSetName')
+                { $PSN=$NamedArgument.Argument.Value }
+                elseif ($ArgumentName -eq 'Position')
+                { $Position=$NamedArgument.Argument.Value}
+             }
+           }
+           $DebugLogger.PSDebug("Add '$ParameterName' into '$psn'") #<%REMOVE%>
+           [pscustomObject]@{
+             Name=$ParameterName
+             PSN=$psn
+            Position=$Position
+           }
+       } 
+      }
+    }
+  }  
+ } 
+}#GetParameter   
+
 function TestParameterName{
- #caution : use the parent scope (Measure-DetectingErrorsInParameterList)         
- 
+ param( $FunctionName,$ParameterName)
+        
   #Toutes les constructions ne sont pas testées
   # par exemple les noms d'opérateur, cela fonctionne mais rend le code légérement obscur
-  #todo espaces dans le nom
   #todo scope ${global:test} ${env:Temp} ${c:\get-noun}
   # todo $isSafeNameOrIdentifierRegex = @"^[-._:\\\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Lm}]{1,100}$","Singleline,CultureInvariant"
   if ($ParameterName -match "(?<Number>^\d)|(?<Operator>-|\+|%|&)|(?<Dot>\.)|(?<Space>^\s+|\s+$)|(?<PSWildcard>\*|\?\[\])")
   { 
-    $Message="The parameter name '$ParameterName' is invalid because it contains a invalid character : "
+    $Message=$RulesMsg.E_ParameterNameContainsInvalidCharacter -f $FunctionName,$ParameterName
     if ($matches.Contains('Number'))
-    { $reason= "it must not have begun by numbers." }
+    { $reason= $RulesMsg.E_ParameterNameInvalidByNumber }
     elseif ($matches.Contains('Dot'))
-    { $reason= "it must not contains a dot character." }
+    { $reason=$RulesMsg.E_ParameterNameInvalidByDot }
     elseif ($matches.Contains('Operator'))
-    { $reason= "it must not contains a operator token." }
+    { $reason= $RulesMsg.E_ParameterNameInvalidByOperator }
     elseif ($matches.Contains('Space'))
-    { $reason= "it must not have begun or endung by spaces." }
+    { $reason= $RulesMsg.E_ParameterNameInvalidBySpace }
     elseif ($matches.Contains('PSWildCard'))
-    { $reason= "it must not contains Powershell wildcard." }
+    { $reason= $RulesMsg.E_ParameterNameInvalidByPSWildcard }
     
-     #Régle 6 : Le nom d'un paramètre doit éviter certains caractères
-    $DebugLogger.PSDebug("`tRule : Invalide parameter Name") #<%REMOVE%>
-    #$Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning )) > $null
-    $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : $Message $Reason" Error )) > $null
+    $DebugLogger.PSDebug("`tRule : $Message $Reason") #<%REMOVE%>
+    return "$Message$Reason"
  }         
 }#TestParameterName
 
 
 function TestSequentialAndBeginByZeroOrOne{
- #caution : use the parent scope (Measure-DetectingErrorsInParameterList)  
- 
-  $SortedPositions=$GroupByPSN.Group.Position -ne $script:PositionDefault|Sort-Object 
+ param($FunctionName, $GroupByPSN, $Ast, $isDuplicate)
+  $PSN=$GroupByPSN.Name
+  $SortedPositions=$GroupByPSN.Group.Position|Where-Object {$_ -ne $script:PositionDefault}|Sort-Object 
   if ($null -ne $SortedPositions)
   {
+    $ofs=','
     #Régle  4 : Les positions doivent débuter à zéro ou 1
     #Il reste possible d'utiliser des numéros de position arbitraire mais au détriment de la compréhension/relecture
-    #un jeu (J1) peut avoir un paramètre ayant une position 2, dans le cas où un paramètre commun (J0) à tous
-    #les jeux indique une position 1, la régle sera validé J1=(J1+J0). 
-    #Mais si c'est le jeu par défaut on ne peut pas raisonnablement connaitre l'exactitude des positions
-    #Sauf si le jeu par défaut est le seul déclarer. 
-   if (($SortedPositions[0] -gt 1) -and ($script:isSharedParameterSetName_Unique -and ($GroupByPSN.Name -ne $script:SharedParameterSetName))) 
+    #un jeu (J1) peut avoir un paramètre ayant une position 2, dans le cas où un paramètre commun (J0)  
+    #indique une position 1, la régle sera validé J1=(J1+J0). 
+    #Mais si c'est le jeu par défaut on ne peut raisonnablement pas connaitre l'exactitude des positions( à moins de reconstruire toutes les ensembles...)
+    #On fait une exception, si le jeu par défaut est le seul déclaré. 
+   if (($SortedPositions[0] -gt 1) -and ($script:isSharedParameterSetName_Unique -and ($PSN -ne $script:SharedParameterSetName))) 
    { 
      $DebugLogger.PSDebug("`tRule : The positions of parameters must begin by zero or one -> $($SortedPositions[0])") #<%REMOVE%>
-     $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : '$PSN' The positions of parameters must begin by zero or one: $SortedPositions" Error )) > $null
+     NewDiagnosticRecord ($Rule.E_PsnParametersMustBeginByZeroOrOne -F $FunctionName,$PSN,"$SortedPositions") Error $Ast
    }
    if (-not $iDusplicate) 
    {
@@ -477,7 +364,7 @@ function TestSequentialAndBeginByZeroOrOne{
      if (-not (TestSequential $SortedPositions))
      { 
        $DebugLogger.PSDebug("`tRule : Not Sequential") #<%REMOVE%>
-       $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : The ParameterSet '$PSN' contains positions which are not sequential: $SortedPositions" Error )) > $null
+       NewDiagnosticRecord ($RulesMsg.E_PsnPositionsAreNotSequential -f $FunctionName,$PSN,"$SortedPositions") Error $Ast
      }  
    }
   }
@@ -502,7 +389,8 @@ Function Measure-DetectingErrorsInParameterList{
  )
 
   process {
-   try {         
+   try
+   {          
     $Result_DEIPL=New-object System.Collections.Arraylist
     $FunctionName=$FunctionDefinitionAst.Name
     $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
@@ -512,9 +400,9 @@ Function Measure-DetectingErrorsInParameterList{
     $DebugLogger.PSDebug("Paramblock is null : $($null -eq $ParamBlock)") #<%REMOVE%>
     if ($null -eq $ParamBlock)
     { return } 
-   
+    
     $ParametersList=New-object System.Collections.Arraylist
-    $ParametersList.AddRange(@(GetParameter $ParamBlock))
+    $ParametersList.AddRange(@(GetParameter $ParamBlock $Result_DEIPL))
     $script:isSharedParameterSetName_Unique=$false
      #régle 0 : si un paramétre déclare une position, les autres peuvent ne pas en déclarer
      #peut sembler incohérent ou incommode mais possible.
@@ -522,6 +410,7 @@ Function Measure-DetectingErrorsInParameterList{
     #Une fois la liste construite on connait tous les psn
     #Pour celui nommé 'By défault' on doit ajouter tous ces paramètres à tous les autres PSN
     $Groups=$ParametersList|Group-Object -Property PSN
+     #On veut savoir s'il existe un seul groupe, celui par défaut.
     $script:isSharedParameterSetName_Unique=($Groups.Count -eq 1) -and ($Groups[0].Name -eq $script:isSharedParameterSetName)
     $OthersGroups=New-object System.Collections.Arraylist
     $DefaultGroup=Foreach ($group in $Groups) {
@@ -530,15 +419,16 @@ Function Measure-DetectingErrorsInParameterList{
      else
      {$OthersGroups.Add($group) > $null}
     }
-    $DebugLogger.PSDebug("Complete ParametersList") #<%REMOVE%>
+    
     if ($null -ne $DefaultGroup)
     {
       Foreach ($group in $OthersGroups)
       {
+        $DebugLogger.PSDebug("Complete ParametersList") #<%REMOVE%>
         $psnName=$group.Name
         Foreach ($parameter in $DefaultGroup.Group)
         {  
-          $DebugLogger.PSDebug("add $psnname $parameter") #<%REMOVE%>   
+          $DebugLogger.PSDebug("Add group $psnname $parameter") #<%REMOVE%>   
           $ParametersList.Add((
             [pscustomObject]@{
                Name=$parameter.Name
@@ -547,7 +437,7 @@ Function Measure-DetectingErrorsInParameterList{
             })) > $null
        }               
      }
-   }
+    }
       
     Foreach ($GroupByPSN in ( $ParametersList|Group-Object -Property PSN)) {
      $PSN=$GroupByPSN.Name
@@ -560,13 +450,9 @@ Function Measure-DetectingErrorsInParameterList{
      $GroupByPSN.Group|
       Group-Object Position|
        Foreach-Object {
-         $ParameterName=$_.Group[0].Name   
-         $DebugLogger.PSDebug("Parameter=$ParameterName") #<%REMOVE%>
+        $ParameterName=$_.Group[0].Name   
+        $DebugLogger.PSDebug("Parameter=$ParameterName") #<%REMOVE%>
          
-         #régle 1 : un nom de paramètre ne doit pas commencer par un chiffre,
-         # ni contenir certains caractères. Ceci pour les noms de paramètre ${+Name.Next*}
-        TestParameterName
-             
         $Position=$_.Name -as [Int]
         if ($Position -ne $script:PositionDefault) 
         {
@@ -574,7 +460,7 @@ Function Measure-DetectingErrorsInParameterList{
          if ($Position -lt 0)
          {  
            $DebugLogger.PSDebug("`tRule : Position must be positive  '$PSN' - '$ParameterName' - $Position") #<%REMOVE%>
-           $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : In the ParameterSet '$PSN', the parameter '$ParameterName' must have a positive position ($Position)" Error )) > $null
+           $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_PsnMustHavePositivePosition -f $FunctionName,$PSN,$ParameterName,$Position) Error $FunctionDefinitionAst)) > $null
          }
         } 
         $_      
@@ -584,11 +470,13 @@ Function Measure-DetectingErrorsInParameterList{
         #Régle  3 : Les positions des paramètres d'un même jeu ne doivent pas être dupliqués
         #Ex 1,2,3 est correct, mais pas 1,2,3,1           
         $DebugLogger.PSDebug("`tRule : Duplicate position") #<%REMOVE%>
-        $Result_DEIPL.Add((NewDiagnosticRecord "$FunctionName : The ParameterSet '$PSN' contains duplicate position $($_.Name) for $($_.group.name)" Error )) > $null
+        $ofs=','
+        $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_PsnDuplicatePosition -F $FunctionName,$PSN,$_.Name,"$($_.group.name)") Error $FunctionDefinitionAst)) > $null
         $isDuplicate=$true
        }
 
-     TestSequentialAndBeginByZeroOrOne
+     $Dr=@(TestSequentialAndBeginByZeroOrOne $FunctionName $GroupByPSN $FunctionDefinitionAst $isDuplicate)
+     $Result_DEIPL.AddRange($Dr)> $null
 
     } #foreach
     $DebugLogger.PSDebug("end process") #<%REMOVE%>
@@ -604,6 +492,7 @@ Function Measure-DetectingErrorsInParameterList{
                                                                              "DetectingErrorsInParameterList-$FunctionName", 
                                                                              "NotSpecified",
                                                                              $FunctionDefinitionAst
+      $DebugLogger.PSFatal($_.Exception.Message,$_.Exception) #<%REMOVE%>
       $PSCmdlet.ThrowTerminatingError($ER) 
    }       
   }#process

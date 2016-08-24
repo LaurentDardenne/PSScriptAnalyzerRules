@@ -2,10 +2,10 @@
   Param (
     [Parameter(Position=1)]
    [string] $A,
+   [string] $7Name,
     [Parameter(Position=2)]
-   [string] $B,
-    [Parameter(Position=3)]
-   [string] $C
+   [string] $C,
+   $D
    )
- Write-Host "Test"
+  Write-Host "Test"
 }
