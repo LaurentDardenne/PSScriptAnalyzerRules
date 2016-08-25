@@ -86,15 +86,20 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (0)
       }
-#Devrait valider la régle  4 : Les positions doivent débuter à zéro ou 1
-      It "Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3)." {
-        $FileName="$Path\Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3).ps1"
-        
+
+      It "Function with only one mandatory Parameter and ValidateAttribut." {
+        $FileName="$Path\Function with only one mandatory Parameter and ValidateAttribut.ps1"
+  
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (0)
-#         $Results[0].Severity| should be 'Error'
-#         $Results[0].Message|should be ($RulesMessage.E_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'by default', '3')
-     }
+      }
+#todo Add : utile pour les tests de non regression
+# Position\Proxy\Add-AccessControlEntryTest.ps1
+# Position\Proxy\Invoke-CommandTest.ps1
+# Position\Proxy\Invoke-WmiMethodTest.ps1
+# Position\Proxy\Receive-PSSessionTest.ps1
+# Position\Proxy\Where-ObjectTest.ps1
+
     }#context
 
 #todo revoir si les noms des fichier refléte bien leur contenu
@@ -217,15 +222,18 @@ Describe "Rule DetectingErrorsInParameterList" {
       }
 
 # #Régle  4 : Les positions doivent débuter à zéro ou 1
-#       It "Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3)-v2." {
-#         $FileName="$Path\Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3)-v2.ps1"
-#         
-#         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
-#         $Results.Count | should be (1)
-#         $Results[0].Severity| should be 'Error'
-#         $Results[0].Message|should be ($RulesMessage.E_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'by default', '3')
-#       }
+      It "Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3)." {
+        $FileName="$Path\Function with 3 parameters and 2 ParameterSet F2 (1,2) - F3 (3).ps1"
+        
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (2)
+        $Results[0].Severity| should be 'Warning'
+        $Results[1].Severity| should be 'Warning'
+        $Results[0].Message|should be ($RulesMessage.W_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'F2', '2,3')
+        $Results[1].Message|should be ($RulesMessage.W_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'F3', '4')
+      }
 
+#todo régle 4 : ajour 'rule 4. ps1', 'rule 4-default.ps1'
 #régle 5 : L'ensemble des positions doit être une suite ordonnée d'éléments.
       It "Function with 3 parameters and 3 positions (1,2,4) no ParameterSet." {
         $FileName="$Path\Function with 3 parameters and 3 positions (1,2,4) no ParameterSet.ps1"
@@ -247,7 +255,5 @@ Describe "Rule DetectingErrorsInParameterList" {
       }
 
 #todo Function invalidate 5 rules.ps1
-#todo Function with only one mandatory Parameter and ValidateAttribut.ps1
-
     }#context
 }

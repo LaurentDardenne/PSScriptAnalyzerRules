@@ -110,6 +110,10 @@ Task Init -Depends TestBOM {
 
 Task TestBOM {
 #Validation de l'encodage des fichiers AVANT la génération  
+#La régle 'UseBOMForUnicodeEncodedFile' de PSScripAnalyzer s'assure 
+#que les fichiers qui ne sont pas encodé ASCII ont un BOM.
+#Comme ici on ne veut que des fichiers UTF-8, cette régle est trop 'permissive'.
+
   Write-Host "Validation de l'encodage des fichiers du répertoire : $PSScriptAnalyzerRulesVcs"
   
   Import-Module DTW.PS.FileSystem -Global

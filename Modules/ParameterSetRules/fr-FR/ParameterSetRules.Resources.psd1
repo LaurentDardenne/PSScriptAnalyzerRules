@@ -11,7 +11,7 @@ Correction_CheckPsnCaseSensitive={0} : Contrôlez la casse des noms de jeux de p
 
   # Measure-DetectingErrorsInParameterList
 W_PsnUnnecessaryParameterAttribut={0} : Le paramètre '{1}' déclare un attribut [Parameter()] inutile.
-E_PsnParametersMustBeginByZeroOrOne={0} : '{1}' la position des paramètres doit débuter par zéro ou un : {2}
+W_PsnParametersMustBeginByZeroOrOne={0} : '{1}' la position des paramètres doit débuter par zéro ou un : {2}
 E_PsnPositionsAreNotSequential={0} : Le jeu de paramètres '{1}' contient des nombres de positions qui ne forment pas une suite ordonnées : {2}
 E_PsnMustHavePositivePosition={0} : Dans le jeu de paramètres '{1}', le paramètre '{2}' doit avoir un position positive ({3})
 E_PsnDuplicatePosition={0} : Le jeu de paramètres '{1}' contient une ou des positions dupliquées {2} pour les paramètres {3}

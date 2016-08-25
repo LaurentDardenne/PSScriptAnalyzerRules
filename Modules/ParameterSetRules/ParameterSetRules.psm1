@@ -240,7 +240,6 @@ function GetParameter{
   {
    $ParameterName=$Parameter.Name.VariablePath.UserPath
    $PSN=$script:SharedParameterSetName
-   $Position=$script:PositionDefault
    
     #régle 1 : un nom de paramètre ne doit pas commencer par un chiffre,
     # ni contenir certains caractères. Ceci pour les noms de paramètre ${+Name.Next*}
@@ -255,7 +254,7 @@ function GetParameter{
       [pscustomObject]@{
        Name=$ParameterName
        PSN=$psn
-       Position=$Position
+       Position=$script:PositionDefault
       }
    }
    else
@@ -270,7 +269,7 @@ function GetParameter{
         [pscustomObject]@{
          Name=$ParameterName
          PSN=$psn
-         Position=$Position
+         Position=$script:PositionDefault
         }
      }  
      else
@@ -281,7 +280,8 @@ function GetParameter{
        {
          if ($Attribute.TypeName.FullName -eq 'Parameter')
          {
-           if (($Attribute.NamedArguments.Count -eq 0) -and ($null -eq $Attribute.PositionalArguments.Count -eq 0))
+           $Position=$script:PositionDefault
+           if (($Attribute.NamedArguments.Count -eq 0) -and ($Attribute.PositionalArguments.Count -eq 0))
            {
              #régle 6: Un attribut [Parameter()] vide est inutile
              $DebugLogger.PSDebug("`tRule : [Parameter()] vide") #<%REMOVE%>
@@ -312,12 +312,20 @@ function GetParameter{
 }#GetParameter   
 
 function TestParameterName{
+#see : the rule AvoidReservedParams
  param( $FunctionName,$ParameterName)
-        
+
+#<DEFINE %DEBUG%>
+#todo Peut couvrir tous les cas. Tests : ${global:test} ${env:Temp} ${c:\get-noun} 
+function IsSafeNameOrIdentifier{
+ param([string] $name)
+   # from PowerShellSource:\src\System.Management.Automation\engine\CommandMetadata.cs
+ [Regex]::IsMatch($name, "^[_\?\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Lm}]{1,100}$", "Singleline,CultureInvariant")
+}
+#<UNDEF %DEBUG%>
   #Toutes les constructions ne sont pas testées
   # par exemple les noms d'opérateur, cela fonctionne mais rend le code légérement obscur
-  #todo scope ${global:test} ${env:Temp} ${c:\get-noun}
-  # todo $isSafeNameOrIdentifierRegex = @"^[-._:\\\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Lm}]{1,100}$","Singleline,CultureInvariant"
+  $DebugLogger.PSDebug("isSafeNameOrIdentifier= $(IsSafeNameOrIdentifier $ParameterName)") #<%REMOVE%>
   if ($ParameterName -match "(?<Number>^\d)|(?<Operator>-|\+|%|&)|(?<Dot>\.)|(?<Space>^\s+|\s+$)|(?<PSWildcard>\*|\?\[\])")
   { 
     $Message=$RulesMsg.E_ParameterNameContainsInvalidCharacter -f $FunctionName,$ParameterName
@@ -341,20 +349,19 @@ function TestParameterName{
 function TestSequentialAndBeginByZeroOrOne{
  param($FunctionName, $GroupByPSN, $Ast, $isDuplicate)
   $PSN=$GroupByPSN.Name
-  $SortedPositions=$GroupByPSN.Group.Position|Where-Object {$_ -ne $script:PositionDefault}|Sort-Object 
+  $SortedPositions=$GroupByPSN.Group.Position|Where-Object {$_ -ne $script:PositionDefault}|Sort-Object
   if ($null -ne $SortedPositions)
   {
+    $DebugLogger.PSDebug("psn= $PSN isUnique=$script:isSharedParameterSetName_Unique  -gt 1 $($SortedPositions[0] -gt 1)") #<%REMOVE%>
     $ofs=','
     #Régle  4 : Les positions doivent débuter à zéro ou 1
     #Il reste possible d'utiliser des numéros de position arbitraire mais au détriment de la compréhension/relecture
     #un jeu (J1) peut avoir un paramètre ayant une position 2, dans le cas où un paramètre commun (J0)  
-    #indique une position 1, la régle sera validé J1=(J1+J0). 
-    #Mais si c'est le jeu par défaut on ne peut raisonnablement pas connaitre l'exactitude des positions( à moins de reconstruire toutes les ensembles...)
-    #On fait une exception, si le jeu par défaut est le seul déclaré. 
-   if (($SortedPositions[0] -gt 1) -and ($script:isSharedParameterSetName_Unique -and ($PSN -ne $script:SharedParameterSetName))) 
+    #indique une position 1, la régle sera validé J1=(J1+J0).
+   if (($SortedPositions[0] -gt 1) -and ($script:isSharedParameterSetName_Unique -or ($PSN -ne $script:SharedParameterSetName)))  
    { 
      $DebugLogger.PSDebug("`tRule : The positions of parameters must begin by zero or one -> $($SortedPositions[0])") #<%REMOVE%>
-     NewDiagnosticRecord ($Rule.E_PsnParametersMustBeginByZeroOrOne -F $FunctionName,$PSN,"$SortedPositions") Error $Ast
+     NewDiagnosticRecord ($RulesMsg.W_PsnParametersMustBeginByZeroOrOne -F $FunctionName,$PSN,"$SortedPositions") Warning $Ast
    }
    if (-not $iDusplicate) 
    {
@@ -410,8 +417,14 @@ Function Measure-DetectingErrorsInParameterList{
     #Une fois la liste construite on connait tous les psn
     #Pour celui nommé 'By défault' on doit ajouter tous ces paramètres à tous les autres PSN
     $Groups=$ParametersList|Group-Object -Property PSN
+   
      #On veut savoir s'il existe un seul groupe, celui par défaut.
-    $script:isSharedParameterSetName_Unique=($Groups.Count -eq 1) -and ($Groups[0].Name -eq $script:isSharedParameterSetName)
+#     $DebugLogger.PSDebug("count=$($Groups.Values.Count)") #<%REMOVE%>
+#     $DebugLogger.PSDebug("name=$($Groups[0].Name)") #<%REMOVE%> 
+#     $DebugLogger.PSDebug("is default PSN=$($Groups[0].Name -eq $script:SharedParameterSetName)") #<%REMOVE%>
+     
+    $script:isSharedParameterSetName_Unique=($Groups.Values.Count -eq 1) -and ($Groups[0].Name -eq $script:SharedParameterSetName)
+   
     $OthersGroups=New-object System.Collections.Arraylist
     $DefaultGroup=Foreach ($group in $Groups) {
      if ($group.name -eq $script:SharedParameterSetName)

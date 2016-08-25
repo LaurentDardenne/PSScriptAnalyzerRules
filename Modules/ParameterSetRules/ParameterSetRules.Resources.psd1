@@ -11,7 +11,7 @@ Correction_CheckPsnCaseSensitive={0} : Check the character case of the parameter
 
   # Measure-DetectingErrorsInParameterList
 W_PsnUnnecessaryParameterAttribut={0} : The parameter '{1}' declare an unnecessary ParameterAttribut.
-E_PsnParametersMustBeginByZeroOrOne={0} : '{1}' The positions of parameters must begin by zero or one: {2}
+W_PsnParametersMustBeginByZeroOrOne={0} : '{1}' The positions of parameters must begin by zero or one: {2}
 E_PsnPositionsAreNotSequential={0} : The ParameterSet '{1}' contains positions which are not sequential: {2}
 E_PsnMustHavePositivePosition={0} : In the ParameterSet '{1}', the parameter '{2}' must have a positive position ({3})
 E_PsnDuplicatePosition={0} : The ParameterSet '{1}' contains duplicate position {2} for the parameters {3}
