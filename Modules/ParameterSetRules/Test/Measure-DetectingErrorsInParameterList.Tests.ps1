@@ -286,9 +286,12 @@ Describe "Rule DetectingErrorsInParameterList" {
       }
      
      #Le résultat semble être dans un ordre différent sous Appveyor :-/
+     # Ce test fonctionne sous Windows Seven x64
      #Cela reste un mystère pour le moment...
      if (Test-Path env:APPVEYOR)
-     { Write-host "Skipped: Control all rules in a file."}
+     { 
+        It "Control all rules in a file." -skip  { }
+     }
      else
      {
       It "Control all rules in a file." {
