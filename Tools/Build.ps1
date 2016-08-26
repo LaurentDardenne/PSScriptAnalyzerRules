@@ -8,6 +8,13 @@
 # Le profile du projet (PSScriptAnalyzerRules_ProjectProfile.ps1) doit être chargé
 
 Set-Location $PSScriptAnalyzerRulesTools
+ #Mêmes versions que sur la machine Appveyor
+Write-host "Update Pester"
+Update-Module Pester -Force
+Write-host "Update PsScriptAnalyzer"
+Update-Module PsScriptAnalyzer -force
+Write-host "Update Psake"
+Update-Module Psake  -force 
 
 try {
  'Psake'|

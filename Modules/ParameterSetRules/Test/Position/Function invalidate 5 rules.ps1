@@ -52,5 +52,4 @@
     [Parameter()]
     ${S}
    )
-  Write-Host "Traitement..."
 }

@@ -105,7 +105,6 @@ Task Init -Depends TestBOM {
  Write-host "Mode $Configuration"
   if (-not (Test-Path Env:ProfilePSScriptAnalyzerRules))
   {Throw 'La variable $ProfilePSScriptAnalyzerRules n''est pas déclarée.'}
-    
 } #Init
 
 Task TestBOM {
