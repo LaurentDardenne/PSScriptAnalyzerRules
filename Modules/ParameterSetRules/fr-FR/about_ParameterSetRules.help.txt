@@ -2,54 +2,135 @@
     about_ParameterSetRules
 
 SHORT DESCRIPTION
-    Décrit les régles définies dans le module ParameterSetRules.psm1
+    Décrit les règles définies dans le module ParameterSetRules.psm1
 
 LONG DESCRIPTION
     Une fonction peut déclarer des jeux de paramètres via l'attribut [Parameter()],
     on utilise sa propriété 'ParametersetName', exemple : 
       [Parameter(ParametersetName="NOM")]
     
-    Hormis les erreur de syntaxes lors du parsing ou d'une erreur de paramétrage ambigu lors 
-    de l'exécution, aucun contrôle fonctionnel n'est effectué par Powerhell sur la 
-    cohérence des jeux déclarés.
+    Hormis les erreurs de syntaxes lors du parsing ou d'une erreur de paramétrage 
+    ambigu lors de l'exécution, aucun contrôle fonctionnel n'est effectué par 
+    Powershell sur la cohérence des jeux déclarés.
     
-    Il est tout à fait possible de déclarer un seul nom de jeu de paramètre, ce qui n'a pas d'utilité.
-    A moins d'être en phase de développement, ce cas devrait être évité.
+ règle 'Measure-DetectingErrorsInDefaultParameterSetName'
+
+    Il est tout à fait possible de déclarer un seul nom de jeu de paramètre, ce qui 
+    n'a pas d'utilité.
+    A moins d'être en phase de développement, ce cas devrait être évité. Cette 
+    règle émet une 'information' :
+    --> Les instructions de nom de jeux de paramètres sont redondantes, car il 
+        n'existe qu'un seul jeu.
     
-    Lors de la déclaration de plusieurs jeux de paramètres, il est recommandé de déclarer celui 
-    par défaut à l'aide de l'attribut [CmdletBinding()] on utilise sa propriété 'DefaultParameterSetName', 
-    exemple :
-      [CmdletBinding(defaultparameterSetName = "NOM")])]   
-    Son oubli devrait être notifié.
+    Si la fonction ne déclare aucun jeu de paramètres mais que l'on déclare l'attribut 
+    CmdletBinding avec un jeu de paramètres par défaut  :
+     [CmdletBinding(DefaultParameterSetName = "NOM")])] 
+    Cette règle émet l'information suivante :
+    --> La déclaration unique du nom de jeu de paramètre par défaut est inutile 
+        (cf. attribut [CmdletBinding]).
+
+    Ces précédents cas sont similaires, elles ne différent que par le nombre de 
+    déclarations impactées.
+    
+    
+    Lors de la déclaration de plusieurs jeux de paramètres, il est recommandé de 
+    déclarer celui par défaut à l'aide de l'attribut [CmdletBinding()] on utilise 
+    sa propriété 'DefaultParameterSetName', exemple :
+      [CmdletBinding(DefaultParameterSetName = "NOM")])]   
+    Cette règle notifie cette absence par un 'Warning'  :
+    --> L'attribut [CmdletBinding] ne déclare pas sa propriété 'DefaultParameterSetName'. 
    
-    Un nom de jeu de paramètre peut être nommé '__AllParameterSets' qui est le nom de jeux par défaut des 
-    paramètres qui n'appartiennent à aucun des jeux déclarés. Bien qu'improbable, cet usage devrait être évité.
+    La propriété 'DefaultParameterSetName' de l'attribut [CmdletBinding()] doit 
+    référencer un nom de jeux parmis ceux déclarés dans la fonction.
+    Cette règle émet une erreur si ce n'est pas le cas :
+    --> Le nom du jeu de paramètre par défaut ne référence aucun des noms de jeu 
+        de paramètres existant.
+
+    Un nom de jeu de paramètre peut être nommé '__AllParameterSets' qui est le nom 
+    de jeux par défaut des paramètres qui n'appartiennent à aucun des jeux déclarés. 
+    Bien qu'improbable, cet usage devrait être évité. 
+    Cette règle emet dans ce cas un 'Warning' :
+    --> Evitez d'utiliser '__AllParameterSets' pour un nom de jeu de paramètres.
    
-    De plus, Powershell bien que par défaut insensible à la casse, permet de différencier deux noms de 
-    jeu de paramètres identique mais ayant une casse différente. 
+    De plus, Powershell bien que par défaut insensible à la casse, permet de différencier 
+    deux noms de jeu de paramètres identique mais ayant une casse différente. 
     Par exemple le nom 'Jeu' est différent du nom 'jeu', ce qui crée un bug fonctionnel.  
+    Cette règle émet une erreur si ce cas est détecté :
+    --> Les nom de jeux de paramètres sont sensibles à la casse, un conflit a 
+        été détecté
 
-    Ces points sont couverts par la régle 'Measure-DetectingErrorsInDefaultParameterSetName'.
-   
 
-    Autre point à analyser, les noms de paramètres ne doivent pas commencer par un chiffre, 
-    en effet le parseur considère, par exemple, la combinaison -32bits comme une valeur d'argument 
-    de type entier et pas comme un nom de paramètre. Cette valeur sera associée au premier paramètre positionnel !
-    Ceci est dû au fait que le parsing des noms de variable et des nom de paramètre est différent.
+ règle 'Measure-DetectingErrorsInParameterList'
+
+    D'autres points concernent l'analyse des attributs [Parameter()] et des noms 
+    de paramètres.
+    
+    Cette règle émet un 'Warning' en cas de présence d'un attribut [Parameter()] sans propriété :
+    --> Le paramètre 'NomDeParamètre' déclare un attribut [Parameter()] inutile. 
+    
+    Un nom de paramètre ne doit pas commencer par un chiffre, en effet le parseur 
+    considère, par exemple, la combinaison -32bits comme une valeur d'argument 
+    de type entier et pas comme un nom de paramètre.
+    Cette valeur sera associée au premier paramètre positionnel !
+    Ceci est dû au fait que le parsing des noms de variable et des noms de paramètre 
+    est différent.
     Un nom de variable peut débuter par un nombre, mais pas un nom de paramètre.
+    Dans ce cas cette règle émet une erreur :
+    --> Le nom du paramètre 'NomDeParamètre' est invalide. 
+    
+    Pour les paramètres déclarant des positions, Powershell ne vérifie pas si tous 
+    les numéros des positions constituent une suite ordonnée et si chaque numéro est 
+    unique dans la liste du jeu de paramètres.
+    Sinon cette règle émet une erreur : 
+    --> Le jeu de paramètres '{NomDeJeu}' contient des nombres de positions qui 
+        ne forment pas une suite ordonnées : {liste}
+    
+    Par convention de démarrer une suite par 0 ou 1 est préférable, dans le cas contraire 
+    cette règle émet un 'Warning' :
+    --> 'NomDeParamètre' la position des paramètres doit débuter par zéro ou un : {NumérosTrouvés}
    
-    Enfin, pour les paramètres déclarant des positions, Powershell ne vérifie pas si tous les numéros 
-    des positions sont séquentiel et si chaque numéro est unique dans la liste du jeu de paramètres.
+    Si la règle rencontre des numéros de position négatif elle émet une erreur :
+    --> Dans le jeu de paramètres '{NomDeJeu}', le paramètre '{NomDeParamètre}' doit
+        avoir un position positive ({Nombre})
+    
+    Elle émet une erreur si elle trouve des numéros de position dupliqués dans le 
+    jeu de paramètres :
+    --> Le jeu de paramètres '{NomDeJeu}' contient une ou des positions dupliquées {liste} 
+        pour les paramètres {NomsDesParamètres}
+
+    Pour terminer cette règle contrôle la duplication d'attribut [Parameter()] pour 
+    un même jeu de paramètre ainsi que les possibles déclarations contradictoires.
+    Voici quelques exemples :
+       #Cas correct
+         [Parameter(Position=1)]
+         [Parameter(ParameterSetName="F6")]
+         $A          
+      
+      #BUG Powershell : 
+      # une duplication de déclaration identique invalide le résultat de Get-Commande,
+      # Parameters et parameterSet sont vide.
+      
+      #Erreur lors de la duplication de la déclaration :
+         [Parameter(Position=1,ParameterSetName="F6")]
+         [Parameter(Position=1,ParameterSetName="F6")]
+         $A
+      
+      #Ou 
+         [Parameter(Position=1)]
+         [Parameter(ParameterSetName="F6")]
+         [Parameter(Position=2)]      
+         $A
+      
+      #Ou encore
+         [Parameter(Position=1)]
+         [Parameter(ParameterSetName="F6")]
+         [Parameter(ParameterSetName="F6")]
+    En cas de détection de ces cas la régle émet une erreur :           
+    --> Conflit détecté pour le paramètre '{NomDeParamètre}' dans le jeu '{NomDeJeu}' : 
+        un attribut [Parameter()] ne peut être dupliqué ou contenir des déclarations contradictoires.    
 
     todo OutputTypeAttibut
-    Si déclaré : le nom du jeu doit exister, ne pas être dupliqué ?
 
-    
-  Diagnostic PSScripAnalyser    
-   La régle 'Measure-DetectingErrorsInDefaultParameterSetName' renvoit les diagnostics suivants :
-   todo
-   
-    
 SEE ALSO
     https://windowsserver.uservoice.com/forums/301869-powershell/suggestions/11088147-parameterset-names-should-not-be-case-sensitive
     

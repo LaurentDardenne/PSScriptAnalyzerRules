@@ -17,8 +17,6 @@ else
 
 $RulesMessage=&$m {$RulesMsg}
 
- #Todo : Copy a default xml config to disable traces on the console.
-
 Describe "Rule DetectingErrorsInDefaultParameterSetName " {
 
     Context "When there is no violation" {

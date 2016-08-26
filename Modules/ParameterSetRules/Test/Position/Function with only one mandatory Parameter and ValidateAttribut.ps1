@@ -9,5 +9,4 @@
       $FunctionDefinitionAst
  )
 
- Wite-host "Test"
 }

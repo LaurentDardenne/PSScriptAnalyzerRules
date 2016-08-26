@@ -1,5 +1,5 @@
 ﻿Function Add-AccessControlEntryTest {
-[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
+[CmdletBinding(DefaultParameterSetName='FileRights',SupportsShouldProcess=$true, ConfirmImpact='Medium')]
 param(
     [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
     [Alias('Path')]

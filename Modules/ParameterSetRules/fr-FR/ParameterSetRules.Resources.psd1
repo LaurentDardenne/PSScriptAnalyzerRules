@@ -7,7 +7,6 @@ W_DpsAvoid_AllParameterSets_Name={0} : Evitez d'utiliser '__AllParameterSets' po
 I_DpsUnnecessary={0} : La déclaration unique du nom de jeu de paramètre par défaut est inutile (cf. attribut [CmdletBinding]).
 E_DpsInused={0} : Le nom du jeu de paramètre par défaut ne référence aucun des noms de jeu de paramètres existant.
 E_CheckPsnCaseSensitive={0} : Les nom de jeux de paramètres sont sensibles à la casse, un conflit a été détecté : {1}
-Correction_CheckPsnCaseSensitive={0} : Contrôlez la casse des noms de jeux de paramètres concernés.
 
   # Measure-DetectingErrorsInParameterList
 W_PsnUnnecessaryParameterAttribut={0} : Le paramètre '{1}' déclare un attribut [Parameter()] inutile.
@@ -22,4 +21,5 @@ E_ParameterNameInvalidByDot=Il ne doit pas contenir le caractère point ('.').
 E_ParameterNameInvalidByOperator=Il ne doit pas contenir un symbole d'opérateur Powershell.
 E_ParameterNameInvalidBySpace=Il ne doit pas débuter ou se terminer par des espaces.
 E_ParameterNameInvalidByPSWildcard=Il ne doit pas contenir des jokers Powershell ('*', '?', '[', ']').
+E_ConflictDuplicateParameterAttribut={0} : Conflit détecté pour le paramètre '{1}' dans le jeu '{2}' : un attribut [Parameter()] ne peut être dupliqué ou contenir des déclarations contradictoires.
 '@

@@ -7,7 +7,6 @@ W_DpsAvoid_AllParameterSets_Name={0} : Avoid to use '__AllParameterSets' as name
 I_DpsUnnecessary={0} : The single declaration of default parameter set name is unnecessary (see attribute [CmdletBinding]).
 E_DpsInused={0} : The default parameter set name does not refer to a existing parameter set name.  
 E_CheckPsnCaseSensitive={0} : The parameter set names are case sensitive, conflicts were detected : {1}
-Correction_CheckPsnCaseSensitive={0} : Check the character case of the parameter set names.
 
   # Measure-DetectingErrorsInParameterList
 W_PsnUnnecessaryParameterAttribut={0} : The parameter '{1}' declare an unnecessary ParameterAttribut.
@@ -22,5 +21,5 @@ E_ParameterNameInvalidByDot=it must not contains a dot character.
 E_ParameterNameInvalidByOperator=it must not contains a operator token.
 E_ParameterNameInvalidBySpace=it must not have begun or endung by spaces.
 E_ParameterNameInvalidByPSWildcard=it must not contains Powershell wildcard.
-
+E_ConflictDuplicateParameterAttribut={0} : Conflict detected for parameter '{1}' in the parameterset '{2}': an attribute [Parameter()] can not be duplicated or contain contradictory statements.
 '@

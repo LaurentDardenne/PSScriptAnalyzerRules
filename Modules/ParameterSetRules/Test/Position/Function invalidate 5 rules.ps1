@@ -44,7 +44,13 @@
     
     [Parameter(Position=1)]
     [Parameter(ParameterSetName="F6")]
-    $q          
+    $q,
+    
+    [Parameter(Position=-3,ParameterSetName="F7")]
+    ${32Bits},
+    
+    [Parameter()]
+    ${S}
    )
   Write-Host "Traitement..."
 }

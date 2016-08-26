@@ -15,9 +15,7 @@ else
 }
 
 
-$RulesMessage=&$m {$RulesMsg}
-
- #Todo : Copy a default xml config to disable traces on the console.
+$RulesMessage,$SharedParameterSetName=&$m {$RulesMsg,$script:SharedParameterSetName}
 
 Describe "Rule DetectingErrorsInParameterList" {
 
@@ -93,13 +91,38 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (0)
       }
-#todo Add : utile pour les tests de non regression
-# Position\Proxy\Add-AccessControlEntryTest.ps1
-# Position\Proxy\Invoke-CommandTest.ps1
-# Position\Proxy\Invoke-WmiMethodTest.ps1
-# Position\Proxy\Receive-PSSessionTest.ps1
-# Position\Proxy\Where-ObjectTest.ps1
 
+#Tests de non regression
+      It "Proxy Add-AccessControlEntryTest." {
+        $FileName="$Path\Proxy\Add-AccessControlEntryTest.ps1"
+  
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (0)
+      }
+      It "proxy Invoke-CommandTest." {
+        $FileName="$Path\Proxy\Invoke-CommandTest.ps1"
+  
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (0)
+      }
+      It "Proxy Invoke-WmiMethodTest." {
+        $FileName="$Path\Proxy\Invoke-WmiMethodTest.ps1"
+  
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (0)
+      }
+      It "Proxy Receive-PSSessionTest." {
+        $FileName="$Path\Proxy\Receive-PSSessionTest.ps1"
+  
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (0)
+      }
+      It "Proxy Where-ObjectTest." {
+        $FileName="$Path\Proxy\Where-ObjectTest.ps1"
+  
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (0)
+      }
     }#context
 
 #todo revoir si les noms des fichier refléte bien leur contenu
@@ -154,7 +177,7 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results[2].Severity| should be 'Error'
         $Results[0].Message|should be (($RulesMessage.E_ParameterNameContainsInvalidCharacter -F 'TestParameterSet', 'Name*') + $RulesMessage.E_ParameterNameInvalidByPSWildcard)
         $Results[1].Message|should be ($RulesMessage.W_PsnUnnecessaryParameterAttribut -F 'TestParameterSet', 'Name*')
-        $Results[2].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'by default','1,3')
+        $Results[2].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', $SharedParameterSetName,'1,3')
       }
 
       It "Function with 3 parameters and 3 positions (1,{ Name},2) no ParameterSet." {
@@ -182,7 +205,7 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (1)
         $Results[0].Severity| should be 'Error'
-        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'by default','A', '-1')
+        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', $SharedParameterSetName,'A', '-1')
       }
 
       It "Function with 3 parameters and 3 positions (-1,-2,-3) no ParameterSet." {
@@ -193,9 +216,9 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results[0].Severity| should be 'Error'                                                                          
         $Results[1].Severity| should be 'Error' 
         $Results[2].Severity| should be 'Error' 
-        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'by default','A', '-1')
-        $Results[1].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'by default','B', '-2')
-        $Results[2].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'by default','C', '-3')
+        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', $SharedParameterSetName,'B', '-2')
+        $Results[1].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', $SharedParameterSetName,'C', '-3')
+        $Results[2].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', $SharedParameterSetName,'A', '-1')
       }
 
       It "Function with 3 parameters and 3 positions (-1,2,3) no ParameterSet." {
@@ -205,8 +228,8 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results.Count | should be (2)
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
-        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'by default','A', '-1')
-        $Results[1].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'by default','-1,2,3')
+        $Results[0].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', $SharedParameterSetName,'A', '-1')
+        $Results[1].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', $SharedParameterSetName,'-1,2,3')
       }   
 #Régle 3 : Les positions des paramètres d'un même jeu ne doivent pas être dupliqués
        
@@ -217,8 +240,8 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results.Count | should be (2)
         $Results[0].Severity| should be 'Error'
         $Results[1].Severity| should be 'Error'
-        $Results[0].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'by default','1', 'A,C')
-        $Results[1].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'by default','1,1,2')
+        $Results[0].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', $SharedParameterSetName,'1', 'C,A')
+        $Results[1].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', $SharedParameterSetName,'1,1,2')
       }
 
 # #Régle  4 : Les positions doivent débuter à zéro ou 1
@@ -233,7 +256,15 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results[1].Message|should be ($RulesMessage.W_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'F3', '4')
       }
 
-#todo régle 4 : ajour 'rule 4. ps1', 'rule 4-default.ps1'
+      It "Function Rule 4-Default." {
+        $FileName="$Path\Rule 4-Default.ps1"
+        
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (1)
+        $Results[0].Severity| should be 'Warning'
+        $Results[0].Message|should be ($RulesMessage.W_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', $SharedParameterSetName, '2,3,4')
+      }
+
 #régle 5 : L'ensemble des positions doit être une suite ordonnée d'éléments.
       It "Function with 3 parameters and 3 positions (1,2,4) no ParameterSet." {
         $FileName="$Path\Function with 3 parameters and 3 positions (1,2,4) no ParameterSet.ps1"
@@ -241,7 +272,7 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
         $Results.Count | should be (1)
         $Results[0].Severity| should be 'Error'
-        $Results[0].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'by default','1,2,4')
+        $Results[0].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', $SharedParameterSetName,'1,2,4')
       }
 
 #régle 6: Un attribut [Parameter()] vide est inutile
@@ -254,6 +285,52 @@ Describe "Rule DetectingErrorsInParameterList" {
         $Results[0].Message|should be ($RulesMessage.W_PsnUnnecessaryParameterAttribut -F 'TestParameterSet', 'A')
       }
 
-#todo Function invalidate 5 rules.ps1
+      It "Control all rules in a file." {
+        $FileName="$Path\Function invalidate 5 rules.ps1"
+        
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (16)
+        $Results[0].Severity| should be 'Error' 
+        $Results[1].Severity| should be 'Warning'
+        $Results[2].Severity| should be 'Error'
+        $Results[3].Severity| should be 'Error'
+        $Results[4].Severity| should be 'Error'
+        $Results[5].Severity| should be 'Error'
+        $Results[6].Severity| should be 'Error'
+        $Results[7].Severity| should be 'Error'
+        $Results[8].Severity| should be 'Error'
+
+        $Results[9].Severity| should be 'Warning'
+        10..15|Foreach { $Results[$_].Severity| should be 'Error' }
+
+        $Results[0].Message|should be (($RulesMessage.E_ParameterNameContainsInvalidCharacter -F 'TestParameterSet', '32Bits') + $RulesMessage.E_ParameterNameInvalidByNumber)
+        $Results[1].Message|should be ($RulesMessage.W_PsnUnnecessaryParameterAttribut -F 'TestParameterSet', 'S')
+        $Results[2].Message|should be ($RulesMessage.E_PsnMustHavePositivePosition -F 'TestParameterSet', 'F7','32Bits', '-3') 
+        $Results[3].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F7','-3,1,3')
+        $Results[4].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'F2','3', 'A,G')
+        $Results[5].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'F2','1', 'q,D')
+        $Results[6].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F2','1,1,2,3,3')
+        $Results[7].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', $SharedParameterSetName,'1,3')
+        $Results[8].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'F6','3', 'p,G')
+        $Results[9].Message|should be ($RulesMessage.W_PsnParametersMustBeginByZeroOrOne -F 'TestParameterSet', 'F6', '3,3,4,5')
+        $Results[10].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F6','3,3,4,5')
+        $Results[11].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'F3','1', 'E,q')
+        $Results[12].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F3','0,1,1,2,3')
+        $Results[13].Message|should be ($RulesMessage.E_PsnDuplicatePosition -F 'TestParameterSet', 'F5','1', 'm,q,k')
+        $Results[14].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F5','1,1,1,2,3')
+        $Results[15].Message|should be ($RulesMessage.E_PsnPositionsAreNotSequential -F 'TestParameterSet', 'F4','1,3')
+      }
+
+#régle 7: Conflit détecté : un attribut [Parameter()] ne peut être dupliqué ou contradictoire
+      It "Function Duplicate ParameterAttribut." {
+        $FileName="$Path\Function Duplicate ParameterAttribut.ps1"
+        
+        $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
+        $Results.Count | should be (3)
+        0..2|% {$Results[$_].Severity| should be 'Error'}
+        $Results[0].Message|should be ($RulesMessage.E_ConflictDuplicateParameterAttribut -F 'TestParameterSet','B','F2')
+        $Results[1].Message|should be ($RulesMessage.E_ConflictDuplicateParameterAttribut -F 'TestParameterSet','C','F3')
+        $Results[2].Message|should be ($RulesMessage.E_ConflictDuplicateParameterAttribut -F 'TestParameterSet','D','F2')
+      }      
     }#context
 }
