@@ -289,7 +289,7 @@ Describe "Rule DetectingErrorsInParameterList" {
         $FileName="$Path\Function invalidate 5 rules.ps1"
         
         $Results = Invoke-ScriptAnalyzer -Path $Filename -CustomRulePath $CustomRulePath
-        $Results
+        $Results|Select Severity,Message|%  {Write-Host "$_"}
         $Results.Count | should be (16)
         $Results[0].Severity| should be 'Error' 
         $Results[1].Severity| should be 'Warning'
