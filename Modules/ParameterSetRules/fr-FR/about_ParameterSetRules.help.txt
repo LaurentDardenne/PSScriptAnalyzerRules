@@ -13,7 +13,8 @@ LONG DESCRIPTION
     ambigu lors de l'exécution, aucun contrôle fonctionnel n'est effectué par 
     Powershell sur la cohérence des jeux déclarés.
     
- règle 'Measure-DetectingErrorsInDefaultParameterSetName'
+ 
+ Règle 'Measure-DetectingErrorsInDefaultParameterSetName'
 
     Il est tout à fait possible de déclarer un seul nom de jeu de paramètre, ce qui 
     n'a pas d'utilité.
@@ -25,7 +26,7 @@ LONG DESCRIPTION
     Si la fonction ne déclare aucun jeu de paramètres mais que l'on déclare l'attribut 
     CmdletBinding avec un jeu de paramètres par défaut  :
      [CmdletBinding(DefaultParameterSetName = "NOM")])] 
-    Cette règle émet l'information suivante :
+    Cette règle émet une 'information' :
     --> La déclaration unique du nom de jeu de paramètre par défaut est inutile 
         (cf. attribut [CmdletBinding]).
 
@@ -37,30 +38,36 @@ LONG DESCRIPTION
     déclarer celui par défaut à l'aide de l'attribut [CmdletBinding()] on utilise 
     sa propriété 'DefaultParameterSetName', exemple :
       [CmdletBinding(DefaultParameterSetName = "NOM")])]   
-    Cette règle notifie cette absence par un 'Warning'  :
+    Cette règle notifie cette absence par un 'warning'  :
     --> L'attribut [CmdletBinding] ne déclare pas sa propriété 'DefaultParameterSetName'. 
    
     La propriété 'DefaultParameterSetName' de l'attribut [CmdletBinding()] doit 
-    référencer un nom de jeux parmis ceux déclarés dans la fonction.
-    Cette règle émet une erreur si ce n'est pas le cas :
+    référencer un nom de jeu parmis ceux déclarés dans la fonction.
+    Cette règle émet un 'Warning' si ce n'est pas le cas :
     --> Le nom du jeu de paramètre par défaut ne référence aucun des noms de jeu 
         de paramètres existant.
 
     Un nom de jeu de paramètre peut être nommé '__AllParameterSets' qui est le nom 
     de jeux par défaut des paramètres qui n'appartiennent à aucun des jeux déclarés. 
     Bien qu'improbable, cet usage devrait être évité. 
-    Cette règle emet dans ce cas un 'Warning' :
+    Cette règle emet dans ce cas un 'warning' :
     --> Evitez d'utiliser '__AllParameterSets' pour un nom de jeu de paramètres.
    
     De plus, Powershell bien que par défaut insensible à la casse, permet de différencier 
     deux noms de jeu de paramètres identique mais ayant une casse différente. 
     Par exemple le nom 'Jeu' est différent du nom 'jeu', ce qui crée un bug fonctionnel.  
-    Cette règle émet une erreur si ce cas est détecté :
+    Cette règle émet une 'erreur' si ce cas est détecté :
     --> Les nom de jeux de paramètres sont sensibles à la casse, un conflit a 
         été détecté
+   
+   Note:
+   Selon la documentation de Powershell (version 2) chaque jeu de paramètre doit avoir au moins
+   un paramètre unique, cette régle semble être plus élaborée dans les dernières versions.
+   N'en connaissant pas le détail cette régle du contrôle de l'ambiguïté des jeux de paramètres 
+   n'est pas implémentée.
 
-
- règle 'Measure-DetectingErrorsInParameterList'
+ 
+ Règle 'Measure-DetectingErrorsInParameterList'
 
     D'autres points concernent l'analyse des attributs [Parameter()] et des noms 
     de paramètres.

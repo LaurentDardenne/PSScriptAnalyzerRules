@@ -126,7 +126,7 @@ process {
           if (($ParameterSets.count -gt 0) -and ($DPS_Name -cnotin $ParameterSets))
           {
             $DebugLogger.PSDebug("Dps inutilisé") #<%REMOVE%>
-            $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.E_DpsInused -F $FunctionName) Error $FunctionDefinitionAst)) > $null
+            $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsInused -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
           }
        }
     }
@@ -358,7 +358,7 @@ function TestSequentialAndBeginByZeroOrOne{
 Function Measure-DetectingErrorsInParameterList{         
 <#
 .SYNOPSIS
-   Determines if parametersets of a command are valid.
+   Determines if the  parameters of a command are valid.
 
 .EXAMPLE
    Measure-DetectingErrorsInParameterList $FunctionDefinitionAst
@@ -501,7 +501,7 @@ Function Measure-DetectingErrorsInParameterList{
 Function Measure-DetectingErrorsInOutputAttribut{         
 <#
 .SYNOPSIS
-   Determines if parametersets of a command are valid.
+  todo
 
 .EXAMPLE
    Measure-DetectingErrorsInOutputAttribut $FunctionDefinitionAst
@@ -526,7 +526,20 @@ Function Measure-DetectingErrorsInOutputAttribut{
 
   process {
    try
-   {          
+   {     
+
+    <#
+    Pour un attribut:
+      s'il existe des valeurs de type chaîne Et que parametersetname n'est pas renseigné
+       alors afficher warning "vérifiez si PSN est nécessaire""
+      
+      s'il existe parametersetname vérifier que le nom existe bien dans la liste de tous les PSN
+      sinon erreur.
+      
+      s'il existe plusieurs déclarations , chacun doit préciser un PSN 
+      sinon afficher Info "Précisez un PSN est recommander""
+       
+    #>     
     Write-Warning "En construction."
     $Result_DEIOPA=New-object System.Collections.Arraylist
     $FunctionName=$FunctionDefinitionAst.Name

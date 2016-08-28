@@ -28,16 +28,19 @@ $VerbosePreference='Continue'
    #US
    Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.Resources.psd1" "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.Resources.psd1" 
    Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\en-US\about_ParameterSetRules.help.txt" "$PSScriptAnalyzerRulesDelivery\en-US\about_ParameterSetRules.help.txt"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\en-US\Example.md"  "$PSScriptAnalyzerRulesDelivery\en-US\Example.md"
+
 
   #Fr 
    Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\fr-FR\ParameterSetRules.Resources.psd1" "$PSScriptAnalyzerRulesDelivery\fr-FR\ParameterSetRules.Resources.psd1"
    Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\fr-FR\about_ParameterSetRules.help.txt" "$PSScriptAnalyzerRulesDelivery\fr-FR\about_ParameterSetRules.help.txt"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\fr-FR\Example.md"  "$PSScriptAnalyzerRulesDelivery\fr-FR\Example.md"
  
 #Module
       #ParameterSetRules.psm1 et ParameterSetRules.psd1 sont créés par la tâche RemoveConditionnal
    
 #Other 
-   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Revisions.txt" "$PSScriptAnalyzerRulesDelivery"
+   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\CHANGELOG.md" "$PSScriptAnalyzerRulesDelivery"
 } #Delivery
 
 Task RemoveConditionnal { #-Depend TestLocalizedData {
