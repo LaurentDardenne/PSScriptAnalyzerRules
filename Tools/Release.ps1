@@ -21,9 +21,10 @@ Task NuGet -Depends CreateZip  {
   $Manifest=&$ImportManifestData "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"
 
   #Gestion manuelle du numéro de version dans le manifest de module
+  # nuget v3.4.4.1321 code  le numéro de version '0.2.0.0' en '0.2.0'
   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.nuspec" "$PSScriptAnalyzerRulesDelivery"
   Write-Host 'Création du package nuget'
-  nuget pack "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.nuspec" -outputdirectory  $PathNuget -version $Manifest.ModuleVersion
+  nuget pack "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.nuspec" -outputdirectory  $PathNuget 
 
   Write-Host "Création de l'artifact du package nuget."
   if (Test-Path env:APPVEYOR)
