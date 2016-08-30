@@ -5,13 +5,13 @@ Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resou
                                       
 #Note : Code du module PS v3, code source pour PS version 2, régle différente: exemple celle de gestion des PSN 
 
-#<DEFINE %DEBUG%>
+#<DEFINE %DEBUG%> 
 #todo bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
 Import-module Log4Posh
  
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
 
-  #This code create the following variables : $script:DebugLogger, $script:InfoLogger,$script:DefaultLogFile
+  #This code create the following variables : $script:DebugLogger, $script:InfoLogger, $script:DefaultLogFile
 $sb=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
 &$sb $Script:lg4n_ModuleName "$psScriptRoot\ParameterSetRulesLog4Posh.Config.xml" $psScriptRoot
 #<UNDEF %DEBUG%>   
@@ -23,6 +23,7 @@ $script:CommonParametersFilter= { $script:CommonParameters -notContains $_.Name}
 $script:PositionDefault=[int]::MinValue
 $script:SharedParameterSetName='__AllParametersSet'
 $script:isSharedParameterSetName_Unique=$false
+
 
 #todo
 $script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInvocation.MyCommand.ScriptBlock.Module.SessionState.InvokeCommand,$null)
@@ -198,6 +199,7 @@ function GetParameter{
       $Parameters.Add("$Name$Psn",$o)
     }
     catch [System.ArgumentException]{
+#<DEFINE %DEBUG%> 
       #Cas correct
       #   [Parameter(Position=1)]
       #   [Parameter(ParameterSetName="F6")]
@@ -219,7 +221,7 @@ function GetParameter{
       #   [Parameter(Position=1)]
       #   [Parameter(ParameterSetName="F6")]
       #   [Parameter(ParameterSetName="F6")]      
-
+#<UNDEF %DEBUG%>   
      #régle 7: Conflit détecté : un attribut [Parameter()] ne peut être dupliqué ou contradictoire
      $DebugLogger.PSDebug("$Name$Psn Conflit détecté : un attribut [Parameter()] ne peut être dupliqué ou contradictoire") #<%REMOVE%>
      $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_ConflictDuplicateParameterAttribut -F $FunctionName,$Name,$PSN) Error $FunctionDefinitionAst)) > $null
@@ -321,9 +323,8 @@ function IsSafeNameOrIdentifier{
 
 
 function TestSequentialAndBeginByZeroOrOne{
-# The positions lit should begin to zero or 1,
-# not be duplicated and
-# constituted an ordered sequence.
+# The positions should begin to zero or 1,
+# not be duplicated and be  an ordered sequence.
          
  param($FunctionName, $GroupByPSN, $Ast, $isDuplicate)
   $PSN=$GroupByPSN.Name
