@@ -4,17 +4,30 @@
 Task default -Depends Nuget
 
 Task NuGet -Depends CreateZip  {
+ #Register-PSRepository -Name PSScriptAnalyzerRules -SourceLocation https://ci.appveyor.com/nuget/PSScriptAnalyzerRules
+ #Install-Module ParameterSetRules -Scope CurrentUser 
   $PathNuget="$env:Temp\nuget"
   if (! (Test-Path  $PathNuget) )
   { md $PathNuget }
 
+  $ImportManifestData={ 
+      Param (
+          [Parameter(Mandatory = $true)]
+          [Microsoft.PowerShell.DesiredStateConfiguration.ArgumentToConfigurationDataTransformation()]
+          [hashtable] $data
+      )
+      return $data
+  }
+  $Manifest=&$ImportManifestData "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"
+
+  #Gestion manuelle du numéro de version dans le manifest de module
   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.nuspec" "$PSScriptAnalyzerRulesDelivery"
-  Write-Host 'Creation package nuget'
+  Write-Host 'Création du package nuget'
   nuget pack "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.nuspec" -outputdirectory  $PathNuget
 
-  Write-Host "Creation artifact package nuget."
+  Write-Host "Création de l'artifact du package nuget."
   if (Test-Path env:APPVEYOR)
-  { Push-AppveyorArtifact "$PathNuget\ParameterSetRules.0.2.0.0.nupkg" } 
+  { Push-AppveyorArtifact "$PathNuget\ParameterSetRules.$($Manifest.ModuleVersion).nupkg" } 
 }
 
 
