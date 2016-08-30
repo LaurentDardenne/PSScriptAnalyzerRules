@@ -1,7 +1,23 @@
 ﻿#Release.ps1
 #Construit la version Release via Psake
 
-Task default -Depends CreateZip 
+Task default -Depends Nuget
+
+Task NuGet -Depends CreateZip  {
+  $PathNuget="$env:Temp\nuget"
+  if (! (Test-Path  $PathNuget) )
+  { md $PathNuget }
+
+  Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.nuspec" "$PSScriptAnalyzerRulesDelivery"
+  Write-Host 'Creation package nuget'
+  nuget pack "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.nuspec" -outputdirectory  $PathNuget
+
+  Write-Host "Creation artifact package nuget."
+  if (Test-Path env:APPVEYOR)
+  { Push-AppveyorArtifact "$PathNuget\ParameterSetRules.0.2.0.0.nupkg" } 
+}
+
+
 
 Task CreateZip -Depends Delivery,TestBomFinal,Pester {
 
@@ -12,7 +28,7 @@ Task CreateZip -Depends Delivery,TestBomFinal,Pester {
   [System.IO.Compression.ZipFile]::CreateFromDirectory($PSScriptAnalyzerRulesDelivery, $zipFile)
 
   if (Test-Path env:APPVEYOR)
-  {  Push-AppveyorArtifact $zipFile }     
+  {  Push-AppveyorArtifact $zipFile }
 }
 
 Task Delivery -Depends Clean,RemoveConditionnal {
@@ -179,4 +195,3 @@ Task PSScriptAnalyzer -Precondition { -not (Test-Path env:APPVEYOR) } {
   Else 
   { Write-host 'PsScriptAnalyzer réussite de l''analyse' -fore green }
 }#PSScriptAnalyzer
-

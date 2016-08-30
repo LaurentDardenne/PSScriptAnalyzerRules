@@ -30,6 +30,9 @@ install:
         
         $env:PSModulePath +=";$ModulePath"
 
+nuget:
+  account_feed: true
+  project_feed: true
 
 build_script:
   - ps: |
