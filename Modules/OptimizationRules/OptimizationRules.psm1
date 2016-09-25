@@ -7,19 +7,58 @@ Import-module Log4Posh
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
    #Récupère le code d'une fonction publique du module Log4Posh (Prérequis)
    #et l'exécute dans la portée du module
-$sb=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
-&$sb $Script:lg4n_ModuleName "$psScriptRoot\OptimizeRulesLog4Posh.Config.xml" $psScriptRoot
+$InitializeLogging=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
+$Params=@{
+  RepositoryName = $Script:lg4n_ModuleName
+  XmlConfigPath = "$psScriptRoot\OptimizationRulesLog4Posh.Config.xml"
+  DefaultLogFilePath = "$psScriptRoot\Logs\$Script:lg4n_ModuleName.log"
+}
+&$InitializeLogging @Params
 #<UNDEF %DEBUG%>   
 
 
+# Function NewDiagnosticRecord{
+#  param ($Message,$Severity,$Ast)
+#  
+#  [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
+#     $Message,
+#     $Ast.Extent,
+#     $PSCmdlet.MyInvocation.InvocationName,
+#     $Severity,
+#     $null
+#  )
+# }
+
 Function NewDiagnosticRecord{
  param ($Message,$Severity,$Ast)
- [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new($Message,
-                                                                             $Ast.Extent,
-                                                                             $PSCmdlet.MyInvocation.InvocationName,
-                                                                             $Severity,
-                                                                             $null)
+
+ $Extent=$Ast.Extent
+ $Correction=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.CorrectionExtent]::new(
+    #Informations d’emplacement
+  $Extent.StartLineNumber, 
+  $Extent.EndLineNumber,
+  $Extent.StartColumnNumber,
+  $Extent.EndColumnNumber, 
+   #Texte de la correction lié à la régle
+  "Texte de la correction lié à la régle", 
+    #Nom du fichier concerné
+  $Extent.File,                
+    #Description de la correction
+  'Description de la correction'
+ )
+
+
+ [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
+    $Message,
+    $Extent,
+    $PSCmdlet.MyInvocation.InvocationName,
+    $Severity,
+    $Extent.File, 
+    $null,
+    $Correction
+ )
 }
+
 
 <#
 .SYNOPSIS
@@ -29,7 +68,7 @@ Function NewDiagnosticRecord{
   Avoid in each iteration to count the number of element of a collection.
 
 .EXAMPLE
-  Measure-OptimizeForSatement $ForStatementAst
+  Measure-OptimizeForStatement $ForStatementAst
     
 .INPUTS
   [System.Management.Automation.Language.ForStatementAst]
@@ -42,7 +81,7 @@ Function NewDiagnosticRecord{
   Inspired by :
   http://www.old.dougfinke.com/blog/index.php/2011/01/16/make-your-powershell-for-loops-4x-faster/
 #>
-Function Measure-OptimizeForSatement{
+Function Measure-OptimizeForStatement{
 
  [CmdletBinding()]
  [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
@@ -56,6 +95,7 @@ Function Measure-OptimizeForSatement{
 
 process { 
   $DebugLogger.PSDebug("Check ForStatement") #<%REMOVE%>
+
   try
   {
       #Analyse une instruction For()
@@ -110,14 +150,14 @@ process {
   catch
   {
      $ER= New-Object -Typename System.Management.Automation.ErrorRecord -Argumentlist $_.Exception, 
-                                                                             "DetectingErrorsInDefaultParameterSetName-$FunctionName", 
+                                                                             "OptimizeForSatement-$FunctionName", 
                                                                              "NotSpecified",
                                                                              $FunctionDefinitionAst
      $DebugLogger.PSFatal($_.Exception.Message,$_.Exception) #<%REMOVE%>
      $PSCmdlet.ThrowTerminatingError($ER) 
   }       
  }#process
-}#Measure-OptimizeForSatement
+}#Measure-OptimizeForStatement
 
 
 #<DEFINE %DEBUG%> 
@@ -129,4 +169,4 @@ Function OnRemoveParameterSetRules {
 $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveParameterSetRules }
 #<UNDEF %DEBUG%>   
  
-Export-ModuleMember -Function Measure-OptimizeForSatement
+Export-ModuleMember -Function Measure-OptimizeForStatement

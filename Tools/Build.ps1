@@ -6,25 +6,11 @@
    [switch] $Release
  ) 
 # Le profile du projet (PSScriptAnalyzerRules_ProjectProfile.ps1) doit être chargé
-
+if (-not (Test-Path Env:ProfilePSScriptAnalyzerRules))
+{ Throw 'La variable d''environnement $ProfilePSScriptAnalyzerRules n''est pas déclarée.' }
 Set-Location $PSScriptAnalyzerRulesTools
- #Mêmes versions que sur la machine Appveyor
-Write-host "Update Pester"
-Update-Module Pester -Force
-Write-host "Update PsScriptAnalyzer"
-Update-Module PsScriptAnalyzer -force
-Write-host "Update Psake"
-Update-Module Psake  -force 
 
-try {
- 'Psake'|
- Foreach {
-   $name=$_
-   Import-Module $Name -EA stop -force
- }
-} catch {
- Throw "Module $name is unavailable."
-}  
+Import-Module Psake -EA stop -force
 
 $Error.Clear()
 if (Test-Path env:APPVEYOR)

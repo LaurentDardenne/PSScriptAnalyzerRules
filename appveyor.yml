@@ -6,10 +6,9 @@ clone_depth: 0
 
 install:
   - ps: | 
+        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
         Install-PackageProvider Nuget -ForceBootstrap -Force
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        Install-Module Pester -Force
-        Install-Module PsScriptAnalyzer -force
         Install-Module Psake  -force
 
         #Register-PSRepository -Name PoshBuildTools -SourceLocation https://ci.appveyor.com/nuget/poshbuildtools
@@ -23,6 +22,7 @@ install:
          Invoke-WebRequest $source -OutFile $destination
          Expand-Archive -Path $destination  -DestinationPath $ModulePath
         
+        #https://www.nuget.org/packages/ReportUnit/1.2.1
         $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
         $destination = "$ModulePath\reportunit.zip"
          Invoke-WebRequest $source -OutFile $destination
@@ -36,7 +36,6 @@ nuget:
 
 build_script:
   - ps: |
-        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
         Import-Module Psake
         . "$PSScriptAnalyzerRulesVcs\Tools\Build.ps1" -Release
 

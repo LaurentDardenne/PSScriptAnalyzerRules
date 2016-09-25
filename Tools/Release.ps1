@@ -21,7 +21,7 @@ Task NuGet -Depends CreateZip  {
   $Manifest=&$ImportManifestData "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"
 
   #Gestion manuelle du numéro de version dans le manifest de module
-  # nuget v3.4.4.1321 code  le numéro de version '0.2.0.0' en '0.2.0'
+  # nuget v3.4.4.1321 code le numéro de version '0.2.0.0' en '0.2.0'
   Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.nuspec" "$PSScriptAnalyzerRulesDelivery"
   Write-Host 'Création du package nuget'
   nuget pack "$PSScriptAnalyzerRulesDelivery\ParameterSetRules.nuspec" -outputdirectory  $PathNuget 
@@ -33,7 +33,7 @@ Task NuGet -Depends CreateZip  {
 
 
 
-Task CreateZip -Depends Delivery,TestBomFinal,Pester {
+Task CreateZip -Depends Delivery,TestBomFinal,Analyze {
 
   $zipFile = "$env:Temp\PSScriptAnalyzerRules.zip"
   if (Test-Path $zipFile)
@@ -73,7 +73,7 @@ $VerbosePreference='Continue'
    Copy "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\CHANGELOG.md" "$PSScriptAnalyzerRulesDelivery"
 } #Delivery
 
-Task RemoveConditionnal { #-Depend TestLocalizedData {
+Task RemoveConditionnal {
 #Traite les pseudo directives de parsing conditionnelle
   
    $VerbosePreference='Continue'
@@ -132,12 +132,9 @@ Task Clean -Depends Init {
    } 
 } #Clean
 
-Task Init -Depends TestBOM {
+Task Init -Depends TestBOM, Dependencies {
 #validation à minima des prérequis
-
  Write-host "Mode $Configuration"
-  if (-not (Test-Path Env:ProfilePSScriptAnalyzerRules))
-  {Throw 'La variable $ProfilePSScriptAnalyzerRules n''est pas déclarée.'}
 } #Init
 
 Task TestBOM {
@@ -158,6 +155,29 @@ Task TestBOM {
   }
 } #TestBOM
 
+
+Task Dependencies {
+#Install ou met à jour les prérequis
+#Appveyor utilisera tjr la dernière version
+
+'Pester','PsScriptAnalyzer' |
+ Foreach { 
+    try {
+      Write-host "Update $ModuleName"
+      Update-module -name $ModuleName -Force
+    }
+    catch [Microsoft.PowerShell.Commands.WriteErrorException]{
+      if ($_.FullyQualifiedErrorId -match ('^ModuleNotInstalledOnThisMachine'))
+      {
+        Write-host "Install $ModuleName"
+        install-module -Name $ModuleName -Scope AllUsers 
+      }
+      else 
+      { throw $_ }
+    }
+ }
+}#Dependencies
+
 #On duplique la tâche, car PSake ne peut exécuter deux fois une même tâche
 Task TestBOMFinal {
 
@@ -172,6 +192,11 @@ Task TestBOMFinal {
   }
 } #TestBOMFinal
 
+Task Analyze -Depend Pester,TestLocalizedData {
+
+}
+
+
 Task Pester -Precondition { -not (Test-Path env:APPVEYOR)} -Depends PSScriptAnalyzer {
    #Execute les tests via la config de Appveyor, ansi on renseigne l'onglet Test :
    # https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules/build/tests
@@ -181,10 +206,8 @@ Task Pester -Precondition { -not (Test-Path env:APPVEYOR)} -Depends PSScriptAnal
   cd  "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\Test"
   $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
   $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
-  #C:\Dev\Reportunit\ReportUnit.exe "$env:Temp\PSScriptAnalyzerRulesPester.xml" c:\temp\report.html
-  #http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip
-  #  http://ottomatt.pagesperso-orange.fr/Temp/Appveyor/PSScriptAnalyzerRulesReport.html
-
+  C:\Dev\Reportunit\ReportUnit.exe "$env:Temp\PSScriptAnalyzerRulesPester.xml" C:\temp\report.html
+  
   if ($Results.FailedCount -gt 0) { 
       throw "Pester : $($Results.FailedCount) tests ont échoués."
   }   
