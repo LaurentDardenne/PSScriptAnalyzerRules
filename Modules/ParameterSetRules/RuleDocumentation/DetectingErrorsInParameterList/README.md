@@ -7,7 +7,3 @@
 |[AvoidDuplicateParameterAttribut](./AvoidDuplicateParameterAttribut.md) | Error |
 |[ProvideParameterWithSequentialPosition](./ProvideParameterWithSequentialPosition.md) | Error |
 |[ProvideValidNameForParameter](./ProvideValidNameForParameter.md) | Error |
-
-PsnPositionsAreNotSequential : 
-PsnDuplicatePosition :
-PsnParametersMustBeginByZeroOrOne : AvoidUsingParameterNameBegunWithNumber
