@@ -1,9 +1,13 @@
 ﻿| Rule | Severity |
 |------|----------------------------------|
-|[PsnMustHavePositivePosition](./PsnMustHavePositivePosition.md) | Error |
-|[PsnDuplicatePosition](./PsnDuplicatePosition.md) | Error |
-|[PsnParametersMustBeginByZeroOrOne](./PsnParametersMustBeginByZeroOrOne.md) | Warning |
-|[PsnUnnecessaryParameterAttribut](./PsnUnnecessaryParameterAttribut.md) | Warning |
-|[ConflictDuplicateParameterAttribut](./ConflictDuplicateParameterAttribut.md) | Error |
-|[PsnPositionsAreNotSequential](./PsnPositionsAreNotSequential.md) | Error |
-|[ParameterNameContainsInvalidCharacter](./ParameterNameContainsInvalidCharacter.md) | Error |
+|[ProvideParameterWithPositivePosition](./ProvideParameterWithPositivePosition.md) | Error |
+|[AvoidDuplicateParameterPosition](./AvoidDuplicateParameterPosition.md) | Error |
+|[AvoidUsingParameterNameBegunWithNumber](./AvoidUsingParameterNameBegunWithNumber.md) | Warning |
+|[AvoidUsingUnnecessaryParameterAttribut](./AvoidUsingUnnecessaryParameterAttribut.md) | Warning |
+|[AvoidDuplicateParameterAttribut](./AvoidDuplicateParameterAttribut.md) | Error |
+|[ProvideParameterWithSequentialPosition](./ProvideParameterWithSequentialPosition.md) | Error |
+|[ProvideValidNameForParameter](./ProvideValidNameForParameter.md) | Error |
+
+PsnPositionsAreNotSequential : 
+PsnDuplicatePosition :
+PsnParametersMustBeginByZeroOrOne : AvoidUsingParameterNameBegunWithNumber

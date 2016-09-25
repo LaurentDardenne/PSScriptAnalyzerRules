@@ -1,8 +1,8 @@
 ﻿| Rule | Severity |
 |------|----------------------------------|
-|[CheckPsnCaseSensitive](./CheckPsnCaseSensitive.md) | Error |
-|[DpsAvoid_AllParameterSets_Name](./DpsAvoid_AllParameterSets_Name.md) | Warning |
-|[DpsInused](./DpsInused.md) | Warning |
-|[DpsNotDeclared](./DpsNotDeclared.md) | Warning |
-|[DpsUnnecessary](./DpsUnnecessary.md) | Information |
-|[PsnRedundant](./PsnRedundant.md) | Information |
+|[AvoidMixingTheCharacterCase](./AvoidMixingTheCharacterCase.md) | Error |
+|[AvoidUsingTheNameAllParameterSets](./AvoidUsingTheNameAllParameterSets.md) | Warning |
+|[AvoidInunsedDefaultParameterSet](./AvoidInunsedDefaultParameterSet.md) | Warning |
+|[ProvideDefaultParameterSetName](./ProvideDefaultParameterSetName.md) | Warning |
+|[AvoidUnnecessaryDefaultParameterSet](./AvoidUnnecessaryDefaultParameterSet.md) | Information |
+|[AvoidUsingRedundantParameterSetName](./AvoidUsingRedundantParameterSetName.md) | Information |

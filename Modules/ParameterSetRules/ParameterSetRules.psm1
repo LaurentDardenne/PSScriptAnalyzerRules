@@ -33,15 +33,43 @@ $script:isSharedParameterSetName_Unique=$false
 #todo
 $script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInvocation.MyCommand.ScriptBlock.Module.SessionState.InvokeCommand,$null)
 
+Function NewCorrectionExtent{
+ param ($Extent,$Text,$Description)
+
+[Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.CorrectionExtent]::new(
+    #Informations d’emplacement
+  $Extent.StartLineNumber, 
+  $Extent.EndLineNumber,
+  $Extent.StartColumnNumber,
+  $Extent.EndColumnNumber, 
+   #Texte de la correction lié à la régle
+  $Text, 
+    #Nom du fichier concerné
+  $Extent.File,                
+    #Description de la correction
+  $Description
+ )
+}
 
 Function NewDiagnosticRecord{
- param ($Message,$Severity,$Ast)
-   #DiagnosticRecord(string message, IScriptExtent extent, string ruleName, DiagnosticSeverity severity, 
-   #                 string scriptPath, string ruleId = null, List<CorrectionExtent> suggestedCorrections = null)
- New-Object -Typename "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord" `
-             -ArgumentList $Message,$Ast.Extent,
-             $PSCmdlet.MyInvocation.InvocationName,$Severity,$null
+ param ($RuleName,$Message,$Severity,$Ast,$Correction=$null)
+
+ $Extent=$Ast.Extent
+
+ [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
+    $Message,
+    $Extent,
+     #RuleName
+    $RuleName,
+    $Severity,
+     #ScriptPath
+    $Extent.File,
+     #RuleID 
+    $null,
+    $Correction
+ )
 }
+
 
 <#
 .SYNOPSIS
@@ -102,7 +130,7 @@ process {
        #Todo : Pour certaines constructions basées sur les paramètres obligatoire (ex: Pester.Set-ScriptBlockScope) #<%REMOVE%>
        #       ce warning ne devrait pas se déclencher.                                                             #<%REMOVE%>
        #       Reste à connaitre les spécification de la règle à coder...                                           #<%REMOVE%>
-      $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning $FunctionDefinitionAst)) > $null 
+      $Result_DEIDPSN.Add((NewDiagnosticRecord 'ProvideDefaultParameterSetName' ($RulesMsg.W_DpsNotDeclared -F $FunctionName) Warning $FunctionDefinitionAst)) > $null 
     } 
 
     # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires                                                      
@@ -110,13 +138,13 @@ process {
     if ((($null -ne $DPS_Name) -and ($SetCount -eq 1) -and ($DPS_Name -ceq  $ParameterSets[0])) -or (($null -eq $DPS_Name) -and ($SetCount -eq 1))) 
     {       
        $DebugLogger.PSDebug("PSN redondant.") #<%REMOVE%>
-       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_PsnRedundant -F $FunctionName ) Information $FunctionDefinitionAst)) > $null
+       $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidUsingRedundantParameterSetName' ($RulesMsg.I_PsnRedundant -F $FunctionName ) Information $FunctionDefinitionAst)) > $null
     }
     
     if (@($ParameterSets;$DPS_Name) -eq [System.Management.Automation.ParameterAttribute]::AllParameterSets)
     { 
        $DebugLogger.PSDebug("Le nom est '__AllParameterSets', ce nommage est improbable, mais autorisé.") #<%REMOVE%>
-       $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
+       $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidUsingTheNameAllParameterSets' ($RulesMsg.W_DpsAvoid_AllParameterSets_Name -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
     }
 
     if ($null -ne $DPS_Name) 
@@ -124,7 +152,7 @@ process {
        if (($SetCount -eq  0) -or (($SetCount -eq  1) -and ($DPS_Name -ceq  $ParameterSets[0])))
        {
           $DebugLogger.PSDebug("Dps seul est inutile") #<%REMOVE%>
-          $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information $FunctionDefinitionAst)) > $null
+          $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidUnnecessaryDefaultParameterSet' ($RulesMsg.I_DpsUnnecessary -F $FunctionName) Information $FunctionDefinitionAst)) > $null
        }
        else 
        {       
@@ -132,7 +160,7 @@ process {
           if (($ParameterSets.count -gt 0) -and ($DPS_Name -cnotin $ParameterSets))
           {
             $DebugLogger.PSDebug("Dps inutilisé") #<%REMOVE%>
-            $Result_DEIDPSN.Add((NewDiagnosticRecord ($RulesMsg.W_DpsInused -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
+            $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidInunsedDefaultParameterSet' ($RulesMsg.W_DpsInused -F $FunctionName) Warning $FunctionDefinitionAst)) > $null
           }
        }
     }
@@ -148,7 +176,7 @@ process {
          $ofs=','
          $CaseSensitive.ExceptWith($CaseInsensitive)
          $msg=$RulesMsg.E_CheckPsnCaseSensitive -F $FunctionName,"$($ParameterSets -eq ($CaseSensitive|Select-Object -First 1))"
-         $Result_DEIDPSN.Add((NewDiagnosticRecord $Msg Error $FunctionDefinitionAst)) > $null
+         $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidMixingTheCharacterCase' $Msg Error $FunctionDefinitionAst)) > $null
        }  
     } 
     return $Result_DEIDPSN
@@ -229,7 +257,7 @@ function GetParameter{
 #<UNDEF %DEBUG%>   
      #régle 7: Conflit détecté : un attribut [Parameter()] ne peut être dupliqué ou contradictoire
      $DebugLogger.PSDebug("$Name$Psn Conflit détecté : un attribut [Parameter()] ne peut être dupliqué ou contradictoire") #<%REMOVE%>
-     $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_ConflictDuplicateParameterAttribut -F $FunctionName,$Name,$PSN) Error $FunctionDefinitionAst)) > $null
+     $Result_DEIPL.Add((NewDiagnosticRecord 'AvoidDuplicateParameterAttribut' ($RulesMsg.E_ConflictDuplicateParameterAttribut -F $FunctionName,$Name,$PSN) Error $FunctionDefinitionAst)) > $null
     }                                       
   }
 
@@ -242,9 +270,9 @@ function GetParameter{
    
     #régle 1 : un nom de paramètre ne doit pas commencer par un chiffre,
     # ni contenir certains caractères. Ceci pour les noms de paramètre ${+Name.Next*}
-   $isParameterNameValid=TestParameterName $FunctionName $ParameterName $Ast 
-   if ($null -ne $isParameterNameValid)  
-   { $ListDR.Add((NewDiagnosticRecord $isParameterNameValid Error $Ast)) > $null   } 
+   $Rule=TestParameterName $FunctionName $ParameterName $Ast 
+   if ($null -ne $Rule)  
+   { $ListDR.Add((NewDiagnosticRecord 'ProvideValidNameForParameter' $Rule Error $Ast)) > $null   } 
                
    
    if ($Parameter.Attributes.Count -eq 0) 
@@ -268,7 +296,7 @@ function GetParameter{
            {
              #régle 6: Un attribut [Parameter()] vide est inutile
              $DebugLogger.PSDebug("`tRule : [Parameter()] vide") #<%REMOVE%>
-             $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.W_PsnUnnecessaryParameterAttribut -F $FunctionName,$ParameterName) Warning $FunctionDefinitionAst)) > $null
+             $Result_DEIPL.Add((NewDiagnosticRecord 'AvoidUsingUnnecessaryParameterAttribut' ($RulesMsg.W_PsnUnnecessaryParameterAttribut -F $FunctionName,$ParameterName) Warning $FunctionDefinitionAst)) > $null
            }
            else 
            {
@@ -345,7 +373,7 @@ function TestSequentialAndBeginByZeroOrOne{
    if (($SortedPositions[0] -gt 1) -and ($script:isSharedParameterSetName_Unique -or ($PSN -ne $script:SharedParameterSetName)))  
    { 
      $DebugLogger.PSDebug("`tRule : The positions of parameters must begin by zero or one -> $($SortedPositions[0])") #<%REMOVE%>
-     NewDiagnosticRecord ($RulesMsg.W_PsnParametersMustBeginByZeroOrOne -F $FunctionName,$PSN,"$SortedPositions") Warning $Ast
+     NewDiagnosticRecord 'AvoidUsingParameterNameBegunWithNumber' ($RulesMsg.W_PsnParametersMustBeginByZeroOrOne -F $FunctionName,$PSN,"$SortedPositions") Warning $Ast
    }
    if (-not $iDusplicate) 
    {
@@ -355,7 +383,7 @@ function TestSequentialAndBeginByZeroOrOne{
      if (-not (TestSequential $SortedPositions))
      { 
        $DebugLogger.PSDebug("`tRule : Not Sequential") #<%REMOVE%>
-       NewDiagnosticRecord ($RulesMsg.E_PsnPositionsAreNotSequential -f $FunctionName,$PSN,"$SortedPositions") Error $Ast
+       NewDiagnosticRecord 'ProvideParameterWithSequentialPosition' ($RulesMsg.E_PsnPositionsAreNotSequential -f $FunctionName,$PSN,"$SortedPositions") Error $Ast
      }  
    }
   }
@@ -466,7 +494,7 @@ Function Measure-DetectingErrorsInParameterList{
          if ($Position -lt 0)
          {  
            $DebugLogger.PSDebug("`tRule : Position must be positive  '$PSN' - '$ParameterName' - $Position") #<%REMOVE%>
-           $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_PsnMustHavePositivePosition -f $FunctionName,$PSN,$ParameterName,$Position) Error $FunctionDefinitionAst)) > $null
+           $Result_DEIPL.Add((NewDiagnosticRecord 'ProvideParameterWithPositivePosition' ($RulesMsg.E_PsnMustHavePositivePosition -f $FunctionName,$PSN,$ParameterName,$Position) Error $FunctionDefinitionAst)) > $null
          }
         } 
         $_      
@@ -477,7 +505,7 @@ Function Measure-DetectingErrorsInParameterList{
         #Ex 1,2,3 est correct, mais pas 1,2,3,1           
         $DebugLogger.PSDebug("`tRule : Duplicate position") #<%REMOVE%>
         $ofs=','
-        $Result_DEIPL.Add((NewDiagnosticRecord ($RulesMsg.E_PsnDuplicatePosition -F $FunctionName,$PSN,$_.Name,"$($_.group.name)") Error $FunctionDefinitionAst)) > $null
+        $Result_DEIPL.Add((NewDiagnosticRecord 'AvoidDuplicateParameterPosition' ($RulesMsg.E_PsnDuplicatePosition -F $FunctionName,$PSN,$_.Name,"$($_.group.name)") Error $FunctionDefinitionAst)) > $null
         $isDuplicate=$true
        }
 
