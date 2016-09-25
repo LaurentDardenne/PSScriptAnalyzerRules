@@ -12,7 +12,7 @@
 RootModule = 'ParameterSetRules.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.2.0'
+ModuleVersion = '0.3.0'
 
 # ID used to uniquely identify this module
 GUID = 'cd244970-87c5-4d02-84f3-d29666f8fea4'
@@ -50,7 +50,7 @@ CLRVersion = '4.0'
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules=@(
 #<DEFINE %DEBUG%>
- @{ModuleName="Log4Posh"; GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="1.2.0.0"}
+ @{ModuleName="Log4Posh"; GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="2.0.0"}
 #<UNDEF %DEBUG%> 
  @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.5.0"}
 )

@@ -12,8 +12,13 @@ Import-module Log4Posh
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
 
   #This code create the following variables : $script:DebugLogger, $script:InfoLogger, $script:DefaultLogFile
-$sb=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
-&$sb $Script:lg4n_ModuleName "$psScriptRoot\ParameterSetRulesLog4Posh.Config.xml" $psScriptRoot
+$InitializeLogging=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
+$Params=@{
+  RepositoryName = $Script:lg4n_ModuleName
+  XmlConfigPath = "$psScriptRoot\ParameterSetRulesLog4Posh.Config.xml"
+  DefaultLogFilePath = "$psScriptRoot\Logs\${Script:lg4n_ModuleName}.log"
+}
+&$InitializeLogging @Params
 #<UNDEF %DEBUG%>   
 
 [string[]]$script:CommonParameters=[System.Management.Automation.Internal.CommonParameters].GetProperties().Names
@@ -79,7 +84,7 @@ process {
     { return } 
     $DebugLogger.PSDebug("ParamBlock.Attributes.Count: $($ParamBlock.Attributes.Count)") #<%REMOVE%>
     
-      #note: si plusieurs attributs [CmdletBinding] existe, la méthode CmdletBinding() renvoi le premier trouvé 
+      #note: si plusieurs attributs [CmdletBinding] existe, la méthode GetCmdletBindingAttributeAst renvoi le premier trouvé 
     $CBA=$script:Helpers.GetCmdletBindingAttributeAst($ParamBlock.Attributes)
     $DPS_Name=($CBA.NamedArguments|Where-Object {$_.ArgumentName -eq 'DefaultParameterSetName'}).Argument.Value
   
@@ -383,6 +388,7 @@ Function Measure-DetectingErrorsInParameterList{
  )
 
   process {
+      #régle 8 :TODO l'attribut [Parameter[position=0)] nécessite l'attribut [CmdletBinding()]
    try
    {          
     $Result_DEIPL=New-object System.Collections.Arraylist
