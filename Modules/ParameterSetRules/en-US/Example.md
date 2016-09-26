@@ -1,6 +1,5 @@
-﻿Create files test from binary cmdlets :
+﻿Create files test from binary cmdlets using the module [MetaProgramming](https://blogs.msdn.microsoft.com/powershell/2009/01/04/extending-andor-modifing-commands-with-proxies/) :
 ```Powershell
- #https://blogs.msdn.microsoft.com/powershell/2009/01/04/extending-andor-modifing-commands-with-proxies/
 Import-Module MetaProgramming
 
 $cmdNames=@(
@@ -33,3 +32,8 @@ $C
  { write-error $_ }
 }
 ```
+The creation of a proxy Powershell using the _MetaProgramming \ New ProxyCommand_ function allow to test the parameter statements  of a binary cmdlet.
+Thus we can apply on proxy scripts, rules contained in ParameterSetRules.psm1 module.
+
+Metaprogramming the unit is not working with DSC resources or Workflow (to check).
+ 

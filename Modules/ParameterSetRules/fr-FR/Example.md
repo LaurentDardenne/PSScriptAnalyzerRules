@@ -1,6 +1,5 @@
-﻿Crée des fichiers de test à partir de cmdlet binaire :
+﻿Crée des fichiers de test à partir de cmdlet binaire à l'aide du module [MetaProgramming](https://blogs.msdn.microsoft.com/powershell/2009/01/04/extending-andor-modifing-commands-with-proxies/):
 ```Powershell
- #https://blogs.msdn.microsoft.com/powershell/2009/01/04/extending-andor-modifing-commands-with-proxies/
 Import-Module MetaProgramming
 
 $cmdNames=@(
@@ -33,7 +32,7 @@ $C
  { write-error $_ }
 }
 ```
-La fonction MetaProgramming.New-ProxyCommand crée un proxy Powershell, ce qui permet de tester les déclarations de paramètre d'un cmdlet binaire.
-Ainsi on peut appliquer sur les scripts créés, les régles contenues le dans module ParameterSetRules.psm1.
+La création d'un proxy Powershell à l'aide de la fonction _MetaProgramming\New-ProxyCommand_ permet de tester les déclarations de paramètre d'un cmdlet binaire.
+Ainsi on peut appliquer sur les scripts de proxy , les régles contenues dans le module ParameterSetRules.psm1.
 
 Le module MetaProgramming ne semble pas fonctionner avec des ressources DSC ou des Workflow (à vérifier). 
