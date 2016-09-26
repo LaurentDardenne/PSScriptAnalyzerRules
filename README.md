@@ -3,8 +3,10 @@
 Rules for PSScriptAnalyzer   
 
 **Documentation**
- [Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation)
 
+[Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation)
+
+How to test parameterset of a [binary cmdlet](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/ParameterSetRules/en-US/Example.md).
 
 **PowerShell 5 Installation**
 
