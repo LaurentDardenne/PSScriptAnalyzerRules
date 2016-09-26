@@ -1,6 +1,10 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/ql5p4n4u6klxakur?svg=true)](https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules)
+﻿[![Build status](https://ci.appveyor.com/api/projects/status/ql5p4n4u6klxakur?svg=true)](https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules)
 # PSScriptAnalyzerRules
 Rules for PSScriptAnalyzer   
+
+**Documentation**
+ [Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation)
+
 
 **PowerShell 5 Installation**
 
