@@ -29,36 +29,42 @@ $Params=@{
 #  )
 # }
 
-Function NewDiagnosticRecord{
- param ($Message,$Severity,$Ast)
+Function NewCorrectionExtent{
+ param ($Extent,$Text,$Description)
 
- $Extent=$Ast.Extent
- $Correction=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.CorrectionExtent]::new(
+[Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.CorrectionExtent]::new(
     #Informations d’emplacement
   $Extent.StartLineNumber, 
   $Extent.EndLineNumber,
   $Extent.StartColumnNumber,
   $Extent.EndColumnNumber, 
    #Texte de la correction lié à la régle
-  "Texte de la correction lié à la régle", 
+  $Text, 
     #Nom du fichier concerné
   $Extent.File,                
     #Description de la correction
-  'Description de la correction'
+  $Description
  )
+}
 
+Function NewDiagnosticRecord{
+ param ($Ast,$Correction=$null)
+
+ $Extent=$Ast.Extent
 
  [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
-    $Message,
+    $RulesMsg.I_ForStatementCanBeImproved,
     $Extent,
-    $PSCmdlet.MyInvocation.InvocationName,
-    $Severity,
-    $Extent.File, 
+     #RuleName
+    "ForStatementCanBeImproved",
+    'Information',
+     #ScriptPath
+    $Extent.File,
+     #RuleID 
     $null,
     $Correction
  )
 }
-
 
 <#
 .SYNOPSIS
@@ -123,11 +129,11 @@ process {
              $CreateObject=$true
              switch ($RightNodeType) { 
                'MemberExpressionAst'   {  # cas : $I -le $Range.Count
-                                          NewDiagnosticRecord $RulesMsg.I_ForStatementCanBeImproved  Information $ForStatementAst
+                                          NewDiagnosticRecord $ForStatementAst
                                        } #MemberExpressionAst 
                                        
                'BinaryExpressionAst'   { # cas : $I -le $Range.Count-1
-                                          NewDiagnosticRecord $RulesMsg.I_ForStatementCanBeImproved Information $ForStatementAst                                      
+                                          NewDiagnosticRecord $ForStatementAst                                      
                                        } #BinaryExpressionAst                                     
                  
                'ParenExpressionAst'   { # cas : $I -le ($Range.Count-1)  
@@ -137,7 +143,7 @@ process {
                                             {
                                                $RExpression=$RNode.Expression
                                                if ($RExpression -is [System.Management.Automation.Language.BinaryExpressionAst])
-                                               { NewDiagnosticRecord $RulesMsg.I_ForStatementCanBeImproved Information $ForStatementAst } 
+                                               { NewDiagnosticRecord $ForStatementAst } 
                                             }#CommandEx 
                                         }#Foreach
                                       } #ParenExpressionAst

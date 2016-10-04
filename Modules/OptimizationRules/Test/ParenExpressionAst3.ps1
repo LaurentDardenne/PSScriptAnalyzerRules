@@ -1,6 +1,4 @@
-﻿#Transformation de code : 
-
-function TestScriptFileInfo
+﻿function TestScriptFileInfo
 {
   if($commentLines.Count -gt 2)
   {
