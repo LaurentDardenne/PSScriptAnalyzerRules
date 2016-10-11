@@ -1,10 +1,8 @@
 ﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-     "ForStatementCanBeImproved",
-     "",
-     Justification="’New-ReportObject’ do not change the system state, only the application 'context'")]
+     "ForStatementCanBeImproved","")]
      
 param()
- For($i=0; $i -lt $Range.Count-1; $i++) 
+ For($i=0; $i -lt ($Range.Count-1); $i++) 
  { $i }
  
  For($i=0; $i -lt $Range.Count-1; $i++) 
