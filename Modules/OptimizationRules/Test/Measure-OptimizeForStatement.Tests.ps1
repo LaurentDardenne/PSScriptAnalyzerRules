@@ -1,4 +1,4 @@
-$global:here = Split-Path -Parent $MyInvocation.MyCommand.Path
+﻿$global:here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if (Test-Path env:APPVEYOR_BUILD_FOLDER)
 { 
