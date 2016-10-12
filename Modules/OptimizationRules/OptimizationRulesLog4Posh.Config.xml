@@ -88,7 +88,7 @@
   
   <appender name="FileExternal" type="log4net.Appender.RollingFileAppender">
     <!-- Exemple de nom par défaut :  
-     C:\Users\User\AppData\Local\Temp\ParameterSetRules-2224-ConsoleHost-17032014093932
+     C:\Users\User\AppData\Local\Temp\OptimizationRules-2224-ConsoleHost-17032016093932
     -->
     <file type="log4net.Util.PatternString" value="%env{TEMP}\\OptimizationRules-%property{Owner}-%property{LogJobName}-%date{ddMMyyyy}.log"/>
     <param name="AppendToFile" value="true"/>
