@@ -8,7 +8,7 @@
 #Par défaut on installe, sinon on met à jour
 #Et on force l'installe pour le CI  
 if (Test-Path env:APPVEYOR)
-{ Invoke-Psake .\Dependencies.ps1 -parameters @{"Mode"="Install"} -nologo }
+{ Invoke-Psake "$PSScriptAnalyzerRulesVcs\Tools\Dependencies.ps1" -parameters @{"Mode"="Install"} -nologo }
 else
-{ Invoke-Psake .\Dependencies.ps1 -parameters @{"Mode"="$($PsCmdlet.ParameterSetName)"} -nologo }
+{ Invoke-Psake "$PSScriptAnalyzerRulesVcs\Tools\Dependencies.ps1" -parameters @{"Mode"="$($PsCmdlet.ParameterSetName)"} -nologo }
 
