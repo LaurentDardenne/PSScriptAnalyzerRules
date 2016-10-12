@@ -26,7 +26,10 @@ install:
         $c.Parameters.GetEnumerator()|? {$_.Key -match '^S'}
         
         PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force #-SkipPublisherCheck
-        Throw "STOP "
+        ipmo PSScriptAnalyzer
+
+        $ModuleVersion= (Get-module PSScriptAnalyzer).Version
+        Write-warning "Analyzer version= $ModuleVersion"   
 
         Install-Module Psake -force
         Import-Module Psake
