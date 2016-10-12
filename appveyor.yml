@@ -18,9 +18,10 @@ install:
          Remove-module PowershellGet
          Remove-module PackageManagement  
         Import-Module PowershellGet 
-        
-        $ModuleVersion= (Get-module PowershellGet).Version
-        Write-warning "version= $ModuleVersion"       
+     
+        PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force -SkipPublisherCheck
+
+     
         Install-Module Psake -force
         Import-Module Psake
         . "$PSScriptAnalyzerRulesVcs\Tools\Install.ps1"
