@@ -16,19 +16,6 @@ $Params=@{
 &$InitializeLogging @Params
 #<UNDEF %DEBUG%>   
 
-
-# Function NewDiagnosticRecord{
-#  param ($Message,$Severity,$Ast)
-#  
-#  [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
-#     $Message,
-#     $Ast.Extent,
-#     $PSCmdlet.MyInvocation.InvocationName,
-#     $Severity,
-#     $null
-#  )
-# }
-
 Function NewCorrectionExtent{
  param ($Extent,$Text,$Description)
 
@@ -56,7 +43,7 @@ Function NewDiagnosticRecord{
     $RulesMsg.I_ForStatementCanBeImproved,
     $Extent,
      #RuleName
-    "ForStatementCanBeImproved",
+    'ForStatementCanBeImproved',
     'Information',
      #ScriptPath
     $Extent.File,
@@ -72,6 +59,8 @@ Function NewDiagnosticRecord{
 
 .DESCRIPTION
   Avoid in each iteration to count the number of element of a collection.
+  Inspired by :
+  http://www.old.dougfinke.com/blog/index.php/2011/01/16/make-your-powershell-for-loops-4x-faster/
 
 .EXAMPLE
   Measure-OptimizeForStatement $ForStatementAst
@@ -81,11 +70,6 @@ Function NewDiagnosticRecord{
   
 .OUTPUTS
    [Microsoft.Windows.Powershell.ScriptAnalyzer.Generic.DiagnosticRecord[]]
-   
-.NOTES
-  None
-  Inspired by :
-  http://www.old.dougfinke.com/blog/index.php/2011/01/16/make-your-powershell-for-loops-4x-faster/
 #>
 Function Measure-OptimizeForStatement{
 
@@ -112,7 +96,7 @@ process {
       #   $i -lt $Range.Count-1
       #   $i -lt ($Range.Count-1) 
       #   $i -lt (-1+$Range.count) écriture possible mais n'est pas prise en compte  
-    if ($ForStatementAst.Condition -ne $null)
+    if ($null -ne $ForStatementAst.Condition)
     {
       foreach ($Node in $ForStatementAst.Condition.PipelineElements)
       {
@@ -126,17 +110,15 @@ process {
              $DebugLogger.PSDebug("Right=$($Expression.Right.gettype())") #<%REMOVE%>
              $RightNodeType=$Expression.Right.GetType().Name
              $DebugLogger.PSDebug("`t -> switch $RightNodeType") #<%REMOVE%>
-             $CreateObject=$true
              switch ($RightNodeType) { 
-               'MemberExpressionAst'   {  # cas : $I -le $Range.Count
-                                          NewDiagnosticRecord $ForStatementAst
-                                       } #MemberExpressionAst 
+                 # cas : $I -le $Range.Count
+               'MemberExpressionAst'   { NewDiagnosticRecord $ForStatementAst }  
                                        
-               'BinaryExpressionAst'   { # cas : $I -le $Range.Count-1
-                                          NewDiagnosticRecord $ForStatementAst                                      
-                                       } #BinaryExpressionAst                                     
+                 # cas : $I -le $Range.Count-1
+               'BinaryExpressionAst'   { NewDiagnosticRecord $ForStatementAst }                     
                  
-               'ParenExpressionAst'   { # cas : $I -le ($Range.Count-1)  
+                 # cas : $I -le ($Range.Count-1)
+               'ParenExpressionAst'   {   
                                         foreach ($RNode in $Expression.Right.Pipeline.PipelineElements)
                                         {
                                             if ( $RNode -is [System.Management.Automation.Language.CommandExpressionAst] )
@@ -156,7 +138,7 @@ process {
   catch
   {
      $ER= New-Object -Typename System.Management.Automation.ErrorRecord -Argumentlist $_.Exception, 
-                                                                             "OptimizeForSatement-$FunctionName", 
+                                                                             "OptimizeForSatement-$($ForStatementAst.Extent.File)", 
                                                                              "NotSpecified",
                                                                              $FunctionDefinitionAst
      $DebugLogger.PSFatal($_.Exception.Message,$_.Exception) #<%REMOVE%>
