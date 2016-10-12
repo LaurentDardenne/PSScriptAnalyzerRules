@@ -4,16 +4,10 @@ Rules for PSScriptAnalyzer
 
 **Documentation**
 
-[Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation)
+[Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/ParameterSetRules/README.md)
 
-How to test parameterset of a [binary cmdlet](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/ParameterSetRules/en-US/Example.md).
+[Optimization rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/OptimizationRules/README.md)
 
-**PowerShell 5 Installation**
-
-From PowerShell run:
-```Powershell
-Register-PSRepository -Name PSScriptAnalyzerRules -SourceLocation https://ci.appveyor.com/nuget/PSScriptAnalyzerRules
-Install-Module ParameterSetRules -Scope CurrentUser 
-```
-Or [download](https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules/build/artifacts) the module.
-
+Community Analyzer Rules
+MBAnalyzer Rules
+Workflow rules
