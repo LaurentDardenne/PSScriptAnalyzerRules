@@ -27,6 +27,7 @@ $Result=nuspec 'PSParameterSetRules' $ModuleVersion {
    files {
         file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"
         file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1"
+        file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\RuleDocumentation" -target "RuleDocumentation\"
         #file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\README.md"
         #file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\releasenotes.md"
    }        
