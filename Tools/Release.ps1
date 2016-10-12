@@ -77,7 +77,7 @@ Task RemoveConditionnal {
 #Traite les pseudo directives de parsing conditionnelle
   
    $VerbosePreference='Continue'
-   ."$PSScriptAnalyzerRulesTools\Remove-Conditionnal.ps1"
+   ."${env:ProgramFiles}\WindowsPowerShell\Scripts\Remove-Conditionnal.ps1"
    Write-debug "Configuration=$Configuration"
    Write-Warning "Traite la configuration $Configuration"
    Dir "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1",
@@ -111,7 +111,7 @@ Task RemoveConditionnal {
     }#foreach
 } #RemoveConditionnal
 
-#Task TestLocalizedData -ContinueOnError {
+  
 
 Task Clean -Depends Init {
 # Supprime, puis recrée le dossier de livraison   
@@ -147,7 +147,7 @@ Task TestBOM {
   
   Import-Module DTW.PS.FileSystem -Global
   
-  $InvalidFiles=@(&"$PSScriptAnalyzerRulesTools\Test-BOMFile.ps1" $PSScriptAnalyzerRulesVcs)
+  $InvalidFiles=@(&"${env:ProgramFiles}\WindowsPowerShell\Scripts\Test-BOMFile.ps1" $PSScriptAnalyzerRulesVcs)
   if ($InvalidFiles.Count -ne 0)
   { 
      $InvalidFiles |Format-List *
@@ -160,8 +160,11 @@ Task Dependencies {
 #Install ou met à jour les prérequis
 #Appveyor utilisera tjr la dernière version
 
+#Suppose PowershellGet à jour :  Update-module PowershellGet -Force 
+
 'Pester','PsScriptAnalyzer' |
  Foreach { 
+    $ModuleName=$_
     try {
       Write-host "Update $ModuleName"
       Update-module -name $ModuleName -Force
@@ -170,7 +173,8 @@ Task Dependencies {
       if ($_.FullyQualifiedErrorId -match ('^ModuleNotInstalledOnThisMachine'))
       {
         Write-host "Install $ModuleName"
-        install-module -Name $ModuleName -Scope AllUsers 
+           #On précise le repository car Pester est également sur Nuget 
+        Install-Module -Name $ModuleName -Repository PSGallery -Scope AllUsers -SkipPublisherCheck 
       }
       else 
       { throw $_ }
@@ -184,7 +188,7 @@ Task TestBOMFinal {
 #Validation de l'encodage des fichiers APRES la génération  
   
   Write-Host "Validation de l'encodage des fichiers du répertoire : $PSScriptAnalyzerRulesDelivery"
-  $InvalidFiles=@(&"$PSScriptAnalyzerRulesTools\Test-BOMFile.ps1" $PSScriptAnalyzerRulesDelivery)
+  $InvalidFiles=@(&"${env:ProgramFiles}\WindowsPowerShell\Scripts\Test-BOMFile.ps1" $PSScriptAnalyzerRulesDelivery)
   if ($InvalidFiles.Count -ne 0)
   { 
      $InvalidFiles |Format-List *
@@ -194,9 +198,35 @@ Task TestBOMFinal {
 
 Task Analyze -Depend Pester,TestLocalizedData {
 
-}
+}#Analyze
 
 
+Task TestLocalizedData -ContinueOnError {
+Write-warning "Todo TestLocalizedData"
+#  ."$PsIonicTools\Test-LocalizedData.ps1"
+# Show-BalloonTip –Text $TaskName –Title 'Build Psionic' –Icon Info
+
+#  $SearchDir="$PsionicTrunk"
+#  Foreach ($Culture in $Cultures)
+#  {
+#    Dir "$SearchDir\Psionic.psm1"|          
+#     Foreach-Object {
+#        #Construit un objet contenant des membres identiques au nombre de 
+#        #paramètres de la fonction Test-LocalizedData 
+#       New-Object PsCustomObject -Property @{
+#                                      Culture=$Culture;
+#                                      Path="$SearchDir";
+#                                        #convention de nommage de fichier d'aide
+#                                      LocalizedFilename="$($_.BaseName)LocalizedData.psd1";
+#                                      FileName=$_.Name;
+#                                        #convention de nommage de variable
+#                                      PrefixPattern="$($_.BaseName)Msgs\."
+#                                   }
+#     }|   
+#     Test-LocalizedData -verbose
+#  }
+} #TestLocalizedData     
+     
 Task Pester -Precondition { -not (Test-Path env:APPVEYOR)} -Depends PSScriptAnalyzer {
    #Execute les tests via la config de Appveyor, ansi on renseigne l'onglet Test :
    # https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules/build/tests
