@@ -49,7 +49,7 @@ Task RegisterPSRepository {
    if ($_.CategoryInfo.Category -ne 'ObjectNotFound')
    { throw $_ }
    else
-   { Register-PSRepository -Name OttoMatt -SourceLocation $$MyGetSourceUri -PublishLocation $$MyGetPublishUri -InstallationPolicy Trusted }
+   { Register-PSRepository -Name OttoMatt -SourceLocation $MyGetSourceUri -PublishLocation $MyGetPublishUri -InstallationPolicy Trusted }
  }
     
  try{
