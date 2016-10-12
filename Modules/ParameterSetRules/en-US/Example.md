@@ -35,5 +35,5 @@ $C
 The creation of a proxy Powershell using the _MetaProgramming \ New ProxyCommand_ function allow to test the parameter statements  of a binary cmdlet.
 Thus we can apply on proxy scripts, rules contained in ParameterSetRules.psm1 module.
 
-The Module Metaprogramming the unit is not working with DSC resources or Workflow (to check).
+The Metaprogramming module does not seem to work with DSC resources or Workflow (to check).
  
