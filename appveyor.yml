@@ -14,7 +14,7 @@ install:
         Install-PackageProvider Nuget -ForceBootstrap -Force
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
   
-        Update-module PowershellGet -Force  
+        Install-module PowershellGet -Force  
   
         Install-Module Psake -force
         Import-Module Psake
