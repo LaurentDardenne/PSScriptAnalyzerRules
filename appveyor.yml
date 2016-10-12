@@ -18,7 +18,10 @@ install:
          Remove-module PowershellGet
          Remove-module PackageManagement  
         Import-Module PowershellGet 
-     
+        
+        $c=gcm PackageManagement\Install-Package
+        $c.Parameters.GetEnumerator()|? {$_.Key -match '^S'}
+        
         PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force -SkipPublisherCheck
 
      
