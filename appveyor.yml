@@ -4,31 +4,21 @@ clone_folder: c:\projects\PSScriptAnalyzerRules
 
 clone_depth: 0
 
+environment:
+  MyGetApiKey:
+    secure: irzUE0TW1t0PaM/FtieoJK1Uq/7ZXUw4qEUea1wX7LpwXRx1xeUTXEo4spxBVN6c
+
 install:
   - ps: | 
         . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
         Install-PackageProvider Nuget -ForceBootstrap -Force
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        Install-Module Psake  -force
-
-        #Register-PSRepository -Name PoshBuildTools -SourceLocation https://ci.appveyor.com/nuget/poshbuildtools
-        #Install-Module PoshBuildTools -Scope CurrentUser -Force
-        
-        $ModulePath='c:\projects\Modules'
-        Md "$ModulePath\DTW.PS.FileSystem" > $null
-        
-        $source = 'http://www.dtwconsulting.com/PS/Downloads/DTW.PS.FileSystem.zip'
-        $destination = "$ModulePath\DTW.PS.FileSystem.zip"
-         Invoke-WebRequest $source -OutFile $destination
-         Expand-Archive -Path $destination  -DestinationPath $ModulePath
-        
-        #https://www.nuget.org/packages/ReportUnit/1.2.1
-        $source = 'http://relevantcodes.com/Tools/ReportUnit/reportunit-1.2.zip'
-        $destination = "$ModulePath\reportunit.zip"
-         Invoke-WebRequest $source -OutFile $destination
-         Expand-Archive -Path $destination  -DestinationPath $ModulePath
-        
-        $env:PSModulePath +=";$ModulePath"
+  
+        Update-module PowershellGet -Force  
+  
+        Install-Module Psake -force
+        Import-Module Psake
+        . "$PSScriptAnalyzerRulesVcs\Tools\Install.ps1"
 
 nuget:
   account_feed: true
@@ -72,7 +62,7 @@ test_script:
         $ResultsFile="$env:Temp\PSScriptAnalyzerRulesPester.xml"
         $Results = Invoke-Pester  -OutputFormat NUnitXml -OutputFile $ResultsFile -PassThru
         $ReportFile="$env:Temp\ParameterSetRules-TestsReport.html"
-        &"$ModulePath\ReportUnit.exe" $ResultsFile $ReportFile
+        &"$Env:Temp\ReportUnit.1.2.1\tools\ReportUnit.exe" $ResultsFile $ReportFile
         Push-AppveyorArtifact $ReportFile
         if ($Results.FailedCount -gt 0) { 
             throw "$($ruleTestResults.FailedCount) tests failed."
@@ -84,3 +74,4 @@ on_finish:
         Add-AppveyorTest -Name "Finish" -Outcome Running
         $zipFile = "$env:Temp\PSScriptAnalyzerRules.zip"
         Push-AppveyorArtifact $zipFile
+        #todo push Delivry to MyGet $MyGetApiKey
