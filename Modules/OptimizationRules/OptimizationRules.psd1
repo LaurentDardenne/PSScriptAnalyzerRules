@@ -12,7 +12,7 @@
 RootModule = 'OptimizationRules.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.2.0'
+ModuleVersion = '0.3.0'
 
 # ID used to uniquely identify this module
 GUID = '607465cd-bec6-46e4-81e5-768701bf35a0'
@@ -52,7 +52,7 @@ RequiredModules=@(
 #<DEFINE %DEBUG%>
  @{ModuleName="Log4Posh"; GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="2.0.0"}
 #<UNDEF %DEBUG%> 
- @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.5.0"}
+ @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.8.0"}
 )
 
 # Assemblies that must be loaded prior to importing this module
