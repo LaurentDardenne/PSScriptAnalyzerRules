@@ -14,8 +14,11 @@ install:
         Install-PackageProvider Nuget -ForceBootstrap -Force
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
   
-        Install-module PowershellGet -MinimumVersion 1.1.0.0 -Force -verbose
-  
+        Install-module PowershellGet -MinimumVersion 1.1.0.0 -Force
+         Remove-module PowershellGet
+         Remove-module PackageManagement  
+        Import-Module PowershellGet 
+               
         Install-Module Psake -force
         Import-Module Psake
         . "$PSScriptAnalyzerRulesVcs\Tools\Install.ps1"
