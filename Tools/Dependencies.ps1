@@ -15,6 +15,8 @@ Properties {
               #Install-Script ne fonctionne pas avec Myget
               #Mais Install-Module installe le script %-)
              'Edit-String','Lock-File','Remove-Conditionnal','Test-BOMFile','Using-Culture')
+              #Install scripts into "${env:ProgramFiles}\WindowsPowerShell\Scripts"
+
  }
 }
 
@@ -22,14 +24,11 @@ Task default -Depends Install,Update
 
 Task Install -Depends RegisterPSRepository -Precondition { $Mode -eq  'Install'}  {
   
-  Update-module PowershellGet -Force     
+  #Suppose : PowershellGet à jour     
    
    #On précise le repository car Pester est également sur Nuget 
-  Install-Module $PSGallery.Modules -Repository PSGallery -force -SkipPublisherCheck -Scope AllUsers   
+  Install-Module $PSGallery.Modules -Repository PSGallery -Scope AllUsers -force -SkipPublisherCheck   
   Install-Module $MyGet.Modules -Repository OttoMatt -force -Scope AllUsers 
-
-   #Install scripts into "${env:ProgramFiles}\WindowsPowerShell\Scripts"
-  Install-Module -Name $MyGet.Scripts -Repository OttoMatt -Scope AllUsers 
 
   Set-location $Env:Temp
   nuget install ReportUnit
