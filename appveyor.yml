@@ -10,7 +10,12 @@ environment:
 
 install:
   - ps: | 
-        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
+            # Todo . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
+
+
+
+
+
         Install-PackageProvider Nuget -ForceBootstrap -Force
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
   
@@ -19,10 +24,17 @@ install:
          Remove-module PackageManagement  
         Import-Module PowershellGet 
         
+        $ModuleVersion= (Get-module PowershellGet).Version
+        Write-warning "version= $ModuleVersion"   
+
         $c=gcm PackageManagement\Install-Package
         $c.Parameters.GetEnumerator()|? {$_.Key -match '^S'}
         
         PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force -SkipPublisherCheck
+        Throw "STOP " #todo
+
+
+
 
      
         Install-Module Psake -force
