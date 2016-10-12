@@ -25,7 +25,7 @@ install:
         $c=gcm PackageManagement\Install-Package
         $c.Parameters.GetEnumerator()|? {$_.Key -match '^S'}
         
-        PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force -SkipPublisherCheck
+        PowershellGet\Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force #-SkipPublisherCheck
         Throw "STOP "
 
         Install-Module Psake -force
