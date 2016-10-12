@@ -7,7 +7,6 @@
 Properties { 
  $PSGallery=@{
    Modules=@('Pester','PsScriptAnalyzer')
-   Scripts=@('')
  }
  $MyGet=@{
                         #PSNuspec posséde une dépendance sur XMLObject
@@ -15,7 +14,7 @@ Properties {
               #Publish-Script fonctionne avec Myget
               #Install-Script ne fonctionne pas avec Myget
               #Mais Install-Module installe le script %-)
-             'Edit-String','Lock-File','Remove-Conditionnal','Test-BOMFile','Using-Culture'
+             'Edit-String','Lock-File','Remove-Conditionnal','Test-BOMFile','Using-Culture')
  }
 }
 
