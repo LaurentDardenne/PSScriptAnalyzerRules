@@ -27,8 +27,8 @@ Task Install -Depends RegisterPSRepository -Precondition { $Mode -eq  'Install'}
   #Suppose : PowershellGet à jour     
    
    #On précise le repository car Pester est également sur Nuget 
-  PowershellGet\Install-Module -Name $PSGallery.Modules -Repository PSGallery -Scope AllUsers -Force
-  PowershellGet\Install-Module -Name $MyGet.Modules -Repository OttoMatt -force -Scope AllUsers 
+  PowershellGet\Install-Module -Name $PSGallery.Modules -Repository PSGallery -Scope AllUsers -Force -AllowClobber -SkipPublisherCheck
+  PowershellGet\Install-Module -Name $MyGet.Modules -Repository OttoMatt -Scope AllUsers -Force -AllowClobber  
 
   Set-location $Env:Temp
   nuget install ReportUnit
