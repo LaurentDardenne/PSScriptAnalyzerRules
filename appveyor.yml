@@ -10,14 +10,15 @@ environment:
 
 install:
   - ps: | 
-        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
-        Install-PackageProvider Nuget -ForceBootstrap -Force
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
   
-        Install-module PowershellGet -MinimumVersion 1.1.0.0 -Force
-         Remove-module PowershellGet
-         Remove-module PackageManagement  
-        Import-Module PowershellGet 
+          PowerShell.exe -Command {
+            Install-PackageProvider Nuget -ForceBootstrap -Force
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Install-module PowershellGet -MinimumVersion 1.1.0.0 -Force -Scope AllUsers
+         }
+        . "$env:APPVEYOR_BUILD_FOLDER\Tools\PSScriptAnalyzerRules_ProjectProfile.ps1"
+
+        Install-Module -Name 'PSScriptAnalyzer' -Repository PSGallery -Scope AllUsers -Force -SkipPublisherCheck
 
         Install-Module Psake -force
         Import-Module Psake
