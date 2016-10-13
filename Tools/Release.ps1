@@ -3,7 +3,7 @@
 
 Task default -Depends Nuget
 
-Task NuGet -Depends CreateZip  {
+Task NuGet -Depends CreateZip,Publish  {
  #Register-PSRepository -Name PSScriptAnalyzerRules -SourceLocation https://ci.appveyor.com/nuget/PSScriptAnalyzerRules
  #Install-Module ParameterSetRules -Scope CurrentUser 
   $PathNuget="$env:Temp\nuget"
@@ -31,7 +31,16 @@ Task NuGet -Depends CreateZip  {
   { Push-AppveyorArtifact "$PathNuget\ParameterSetRules.$($Manifest.ModuleVersion).nupkg" } 
 }
 
-
+Task PublishOnMyGet -Precondition { Test-Path env:APPVEYOR } {
+ 
+ $PublishParams = @{
+    Repository='OttoMatt'
+    NuGetApiKey = $MyGetApiKey
+    Path = $PSScriptAnalyzerRulesDelivery
+    ReleaseNotes=Get-Content "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\CHANGELOG.md" -raw
+ }
+ Publish-Module @PublishParams
+}
 
 Task CreateZip -Depends Delivery,TestBomFinal,Analyze {
 
