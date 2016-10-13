@@ -34,6 +34,7 @@ Task NuGet -Depends CreateZip,PublishOnMyGet  {
 Task PublishOnMyGet -Precondition { Test-Path env:APPVEYOR } {
  
  $PublishParams = @{
+    Name='ParameterSetRules'                
     Repository='OttoMatt'
     NuGetApiKey = $env:MyGetApiKey
     Path = $PSScriptAnalyzerRulesDelivery
