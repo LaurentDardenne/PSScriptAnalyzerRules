@@ -436,7 +436,8 @@ function TestSequentialAndBeginByZeroOrOne{
   }
 }#TestSequentialAndBeginByZeroOrOne
 
-Function Measure-DetectingErrorsInParameterList{         
+ 
+Function Measure-DetectingErrorsInParameterList{
 <#
 .SYNOPSIS
    Determines if the parameters of a command are valid.
@@ -452,11 +453,13 @@ Function Measure-DetectingErrorsInParameterList{
 
 .LINK
   https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation    
-   
 #>
+
+ [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]    #todo attribut pour un bug sur la 1.8 ??
+
  [CmdletBinding()]
  [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
-
+ 
  Param(
        [Parameter(Mandatory = $true)]
        [ValidateNotNullOrEmpty()]
@@ -566,6 +569,7 @@ Function Measure-DetectingErrorsInParameterList{
      $DebugLogger.PSDebug("Psn=$Psn") #<%REMOVE%>
    
      $isduplicate=$false
+     $isduplicate=$isduplicate #bug régle : PSUseDeclaredVarsMoreThanAssignment
      #Pour chaque jeu, contrôle  les positions de ses paramètres
      # on regroupe une seconde fois pour déterminer s'il y a des duplications
      # et connaitre le nom des paramètres concernés.
@@ -595,6 +599,7 @@ Function Measure-DetectingErrorsInParameterList{
         $ofs=','
         $Result_DEIPL.Add((NewDiagnosticRecord 'AvoidDuplicateParameterPosition' ($RulesMsg.E_PsnDuplicatePosition -F $NameOfBlock,$PSN,$_.Name,"$($_.group.name)") Error $ScriptBlockAst )) > $null
         $isDuplicate=$true
+        $isduplicate=$isduplicate #todo bug régle : PSUseDeclaredVarsMoreThanAssignment
        }
 
      $Dr=@(TestSequentialAndBeginByZeroOrOne $NameOfBlock $GroupByPSN $ScriptBlockAst $isDuplicate)
