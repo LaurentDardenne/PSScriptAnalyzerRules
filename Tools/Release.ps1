@@ -35,7 +35,7 @@ Task PublishOnMyGet -Precondition { Test-Path env:APPVEYOR } {
  
  $PublishParams = @{
     Repository='OttoMatt'
-    NuGetApiKey = $MyGetApiKey
+    NuGetApiKey = $env:MyGetApiKey
     Path = $PSScriptAnalyzerRulesDelivery
     ReleaseNotes=Get-Content "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\CHANGELOG.md" -raw
  }
