@@ -27,7 +27,7 @@ CompanyName = ''
 Copyright = 'CopyLeft'
 
 # Description of the functionality provided by this module
-Description = 'This module contains script analyzer rules to control parmeter set.'
+Description = 'This module contains script analyzer rules to control the param block of a function.'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'
@@ -71,7 +71,11 @@ RequiredModules=@(
 # NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = @('Measure*')
+FunctionsToExport = @(
+ 'Measure-DetectingErrorsInParameterList',
+ 'Measure-DetectingErrorsInDefaultParameterSetName'
+ #todo Measure-DetectingErrorsInOutputAttribut
+)
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
@@ -92,24 +96,20 @@ AliasesToExport = '*'
 PrivateData = @{
 
     PSData = @{
+          # Tags applied to this module. These help with module discovery in online galleries.
+         Tags = @('PSScriptAnalyzer','PSScriptAnalyzerRule', 'Analyze','Rule','ParameterSet' )
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+          # A URL to the license for this module.
+         LicenseUri =  'https://creativecommons.org/licenses/by-nc-sa/4.0/'
 
-        # A URL to the license for this module.
-        # LicenseUri = ''
+          # A URL to the main website for this project.
+         ProjectUri='https://github.com/LaurentDardenne/PSScriptAnalyzerRules'
+          # A URL to an icon representing this module.
+         IconUri='https://github.com/LaurentDardenne/ParameterSetRules/blob/master/icon/ParameterSetRules.png'
 
-        # A URL to the main website for this project.
-        # ProjectUri = ''
-
-        # A URL to an icon representing this module.
-        # IconUri = ''
-
-        # ReleaseNotes of this module
-        # ReleaseNotes = ''
-
+         # ReleaseNotes of this module
+        # ReleaseNotes =
     } # End of PSData hashtable
-
 } # End of PrivateData hashtable
 
 # HelpInfo URI of this module
