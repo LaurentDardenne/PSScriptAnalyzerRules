@@ -3,7 +3,7 @@
 
 $ModuleVersion=(Import-ManifestData "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1").ModuleVersion
 
-$Result=nuspec 'PSParameterSetRules' $ModuleVersion {
+$Result=nuspec 'ParameterSetRules' $ModuleVersion {
    properties @{
         Authors='Dardenne Laurent'
         Owners='Dardenne Laurent'
