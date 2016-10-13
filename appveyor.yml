@@ -1,4 +1,4 @@
-﻿# clone directory
+﻿#clone directory
 clone_folder: c:\projects\PSScriptAnalyzerRules
 #ParameterSetRules
 
@@ -9,9 +9,7 @@ environment:
     secure: irzUE0TW1t0PaM/FtieoJK1Uq/7ZXUw4qEUea1wX7LpwXRx1xeUTXEo4spxBVN6c
 
 install:
-  - ps: | 
-  
-          PowerShell.exe -Command {
+  - ps: |PowerShell.exe -Command {
             Install-PackageProvider Nuget -ForceBootstrap -Force
             Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
             Install-module PowershellGet -MinimumVersion 1.1.0.0 -Force -Scope AllUsers
