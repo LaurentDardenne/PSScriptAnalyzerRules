@@ -3,7 +3,7 @@
 
 Task default -Depends Nuget
 
-Task NuGet -Depends CreateZip,Publish  {
+Task NuGet -Depends CreateZip,PublishOnMyGet  {
  #Register-PSRepository -Name PSScriptAnalyzerRules -SourceLocation https://ci.appveyor.com/nuget/PSScriptAnalyzerRules
  #Install-Module ParameterSetRules -Scope CurrentUser 
   $PathNuget="$env:Temp\nuget"
