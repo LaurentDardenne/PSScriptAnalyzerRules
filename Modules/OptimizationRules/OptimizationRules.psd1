@@ -52,7 +52,7 @@ RequiredModules=@(
 #<DEFINE %DEBUG%>
  @{ModuleName="Log4Posh"; GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="2.0.0"}
 #<UNDEF %DEBUG%> 
- @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.8.0"}
+ @{ModuleName="PSScriptAnalyzer"; GUID='d6245802-193d-4068-a631-8863a4342a18'; ModuleVersion="1.10.0"}
 )
 
 # Assemblies that must be loaded prior to importing this module

@@ -1,20 +1,20 @@
-﻿Import-LocalizedData -BindingVariable RulesMsg -Filename OptimizationRules.Resources.psd1 -EA Stop
+﻿Import-LocalizedData -BindingVariable RulesMsg -Filename OptimizationRules.Resources.psd1 -ErrorAction Stop
                                       
-#<DEFINE %DEBUG%>
-#bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
-Import-module Log4Posh
- 
-$Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
-   #Récupère le code d'une fonction publique du module Log4Posh (Prérequis)
-   #et l'exécute dans la portée du module
-$InitializeLogging=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
-$Params=@{
-  RepositoryName = $Script:lg4n_ModuleName
-  XmlConfigPath = "$psScriptRoot\OptimizationRulesLog4Posh.Config.xml"
-  DefaultLogFilePath = "$psScriptRoot\Logs\$Script:lg4n_ModuleName.log"
-}
-&$InitializeLogging @Params
-#<UNDEF %DEBUG%>   
+  #<DEFINE %DEBUG%>
+  #bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
+  Import-Module Log4Posh
+   
+  $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
+     #Récupère le code d'une fonction publique du module Log4Posh (Prérequis)
+     #et l'exécute dans la portée du module
+  $InitializeLogging=[scriptblock]::Create("${function:Initialize-Log4NetModule}")
+  $Params=@{
+    RepositoryName = $Script:lg4n_ModuleName
+    XmlConfigPath = "$psScriptRoot\OptimizationRulesLog4Posh.Config.xml"
+    DefaultLogFilePath = "$psScriptRoot\Logs\$Script:lg4n_ModuleName.log"
+  }
+  &$InitializeLogging @Params
+  #<UNDEF %DEBUG%>   
 
 Function NewCorrectionExtent{
  param ($Extent,$Text,$Description)
@@ -52,7 +52,7 @@ Function NewDiagnosticRecord{
     $Correction
  )
 }
-
+ 
 <#
 .SYNOPSIS
   Informs about the for loop statement that may be improved.
@@ -84,7 +84,7 @@ Function Measure-OptimizeForStatement{
  )
 
 process { 
-  $DebugLogger.PSDebug("Check ForStatement") #<%REMOVE%>
+ $DebugLogger.PSDebug("Check ForStatement") #<%REMOVE%>
 
   try
   {
@@ -156,5 +156,6 @@ Function OnRemoveParameterSetRules {
 # Section  Initialization
 $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveParameterSetRules }
 #<UNDEF %DEBUG%>   
- 
-Export-ModuleMember -Function Measure-OptimizeForStatement
+
+#Export-ModuleMember -Function Measure-OptimizeForStatement
+   
