@@ -1,5 +1,4 @@
-﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-     "ForStatementCanBeImproved","")]
+﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute("ForStatementCanBeImproved","")]
      
 param()
  For($i=0; $i -lt ($Range.Count-1); $i++) 
