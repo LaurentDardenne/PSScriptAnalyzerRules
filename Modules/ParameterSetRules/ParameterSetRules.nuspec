@@ -9,6 +9,6 @@
     <description>Helper to build and test powershell modules</description>
     <releaseNotes />
     <copyright>CopyLeft</copyright>
-    <tags>PSModule Replace-String</tags>
+    <tags>PSModule PSScriptAnalyzer Rule Lint</tags>
   </metadata>
 </package>
