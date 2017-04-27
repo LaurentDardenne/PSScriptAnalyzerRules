@@ -20,14 +20,12 @@ $Result=nuspec 'ParameterSetRules' $ModuleVersion {
         tags='Powershell PSScriptAnalyzer Rule param ParameterSet'
    }
    
-   dependencies {
-        dependency PSScriptAnalyzer 1.7.0
-   }     
-   
    files {
         file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psd1"
         file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.psm1"
-        file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\RuleDocumentation" -target "RuleDocumentation\"
+        file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRulesLog4Posh.Config.xml"
+        file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\ParameterSetRules.Resources.psd1"
+        file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\RuleDocumentation\*" -target "RuleDocumentation\"
         #file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\README.md"
         #file -src "$PSScriptAnalyzerRulesVcs\Modules\ParameterSetRules\releasenotes.md"
    }        
