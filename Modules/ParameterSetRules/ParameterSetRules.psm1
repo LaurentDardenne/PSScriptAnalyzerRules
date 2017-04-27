@@ -5,13 +5,18 @@ Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resou
                                       
 #Note : Code du module PS v3, code source pour PS version 2, régle différente: exemple celle de gestion des PSN 
 
-#todo DynamicParamBlock
-#todo AvoidInunsedDefaultParameterSet -> severity Information
 
 #<DEFINE %DEBUG%> 
+#todo :  Function Measure-DetectingErrorsInOutputAttribut
+
+#Note  : la rechercher de régles via Get-ScriptAnalyzerRule ne renvoi que les fonctions
+
+#todo DynamicParamBlock
+
 #todo bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
+#todo bug ps v4,5,6: https://github.com/PowerShell/PowerShell/issues/2212#issuecomment-257989424
 Import-module Log4Posh
- 
+
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
 
   #This code create the following variables : $script:DebugLogger, $script:InfoLogger, $script:DefaultLogFile
@@ -33,7 +38,6 @@ $script:SharedParameterSetName='__AllParametersSet'
 $script:isSharedParameterSetName_Unique=$false
 
 
-#todo
 $script:Helpers=[Microsoft.Windows.PowerShell.ScriptAnalyzer.Helper]::new($MyInvocation.MyCommand.ScriptBlock.Module.SessionState.InvokeCommand,$null)
 
 Function NewCorrectionExtent{
@@ -62,7 +66,6 @@ Function NewDiagnosticRecord{
  [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]::new(
     $Message,
     $Extent,
-     #RuleName
     $RuleName,
     $Severity,
      #ScriptPath
@@ -118,7 +121,7 @@ process {
     { $NameOfBlock=([System.IO.FileInfo]$ScriptBlockAst.Extent.File).BaseName }
     $ParamBlock=$ScriptBlockAst.ParamBlock  
   }  
-  elseif ($Parent -is [System.Management.Automation.Language.FunctionDefinitionAst])
+  elseif ($Parent -is [System.Management.Automation.Language.FunctionDefinitionAst]) #todo test : un filtre (Filter) est une fonction avec un bloc process 
   { 
     $DebugLogger.PSDebug('Type=function') #<%REMOVE%>
     $NameOfBlock=$Parent.Name
@@ -126,23 +129,27 @@ process {
     $isFunction=$true
   } 
   else {
+    #A script block is an unnamed block of statements that can be used as a single unit.
     $DebugLogger.PSDebug('Type=unnamed block') #<%REMOVE%>
-    $NameOfBlock='N/A'
+    $NameOfBlock='unnamed block'
     $ParamBlock=$ScriptBlockAst.ParamBlock  
   } 
   
   $DebugLogger.PSDebug("Check the block '$NameOfBlock'") #<%REMOVE%>
   try
   {
+   #A script may have a param-block but not a function-parameter-declaration. 
+   #A function or filter definition may have a function-parameter-declaration or a param-block, but not both.
+   
     $Result_DEIDPSN=New-object System.Collections.Arraylist 
-    $DebugLogger.PSDebug("Paramblock is null : $($null -eq $ParamBlock). isfunction :$isFunction") #<%REMOVE%>
+    $DebugLogger.PSDebug("Paramblock is null ? $($null -eq $ParamBlock). isfunction ? $isFunction") #<%REMOVE%>
     if ($null -eq $ParamBlock)
     { 
      
       if ($isFunction)
       { 
         $DebugLogger.PSDebug("Search in EndBlock.Statements[0].Parameters") #<%REMOVE%>
-         #L'attribut [CmdletBinding] ne peut lié qu'a un bloc Param()
+         #L'attribut [CmdletBinding] ne peut être lié qu'a un bloc Param()
         $DPS_Name=$null
         [string[]] $ParameterSets=@(($Parent.Parameters.Attributes.NamedArguments|Where-Object {$_.ArgumentName -eq 'ParameterSetName'}).Argument.Value|
                                      Select-Object -Unique)      
@@ -150,6 +157,7 @@ process {
       else
       { 
           #Un scriptbloc doit avoir un bloc Param() sinon on utilise $args
+          #If param-block is omitted, any arguments passed to the script block are available via $args (§8.10.1).
          return 
       }  
     } 
@@ -179,7 +187,7 @@ process {
     } 
 
     # Les cas I_PsnRedundant et I_DpsUnnecessary sont similaires                                                      
-    # Pour I_PsnRedundant il y a 1,n déclarations redondantes mais pour I_DpsUnnecessary il y a 1 déclaration inutile
+    # Pour I_PsnRedundant il y a 1,n déclarations redondantes mais pour I_DpsUnnecessary il n'y a qu'une déclaration jugée inutile
     if ((($null -ne $DPS_Name) -and ($SetCount -eq 1) -and ($DPS_Name -ceq  $ParameterSets[0])) -or (($null -eq $DPS_Name) -and ($SetCount -eq 1))) 
     {       
        $DebugLogger.PSDebug("PSN redondant.") #<%REMOVE%>
@@ -205,6 +213,7 @@ process {
           if (($ParameterSets.count -gt 0) -and ($DPS_Name -cnotin $ParameterSets))
           {
             $DebugLogger.PSDebug("Dps inutilisé") #<%REMOVE%>
+            #todo AvoidInunsedDefaultParameterSet -> severity Information
             $Result_DEIDPSN.Add((NewDiagnosticRecord 'AvoidInunsedDefaultParameterSet' ($RulesMsg.W_DpsInused -F $NameOfBlock) Warning  $ScriptBlockAst)) > $null
           }
        }
@@ -313,7 +322,7 @@ function GetParameter{
    $ParameterName=$Parameter.Name.VariablePath.UserPath
    $PSN=$script:SharedParameterSetName
    
-    #régle 1 : un nom de paramètre ne doit pas commencer par un chiffre,
+    #régle 1 : un nom de paramètre ne doit pas (ne devrait pas ?) commencer par un chiffre,
     # ni contenir certains caractères. Ceci pour les noms de paramètre ${+Name.Next*}
    $Rule=TestParameterName $NameOfBlock $ParameterName $Ast 
    if ($null -ne $Rule)  
@@ -385,7 +394,7 @@ function IsSafeNameOrIdentifier{
   if ($ParameterName -match "(?<Number>^\d)|(?<Operator>-|\+|%|&)|(?<Dot>\.)|(?<Space>^\s+|\s+$)|(?<PSWildcard>\*|\?\[\])")
   { 
     $Message=$RulesMsg.E_ParameterNameContainsInvalidCharacter -f $NameOfBlock,$ParameterName
-    if ($matches.Contains('Number')) # ne garder que celle-ci ?
+    if ($matches.Contains('Number')) # todo ne garder que celle-ci ?
     { $reason= $RulesMsg.E_ParameterNameInvalidByNumber }
     elseif ($matches.Contains('Dot'))
     { $reason=$RulesMsg.E_ParameterNameInvalidByDot }
@@ -455,8 +464,6 @@ Function Measure-DetectingErrorsInParameterList{
   https://github.com/LaurentDardenne/PSScriptAnalyzerRules/tree/master/Modules/ParameterSetRules/RuleDocumentation    
 #>
 
- [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]    #todo attribut pour un bug sur la 1.8 ??
-
  [CmdletBinding()]
  [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
  
@@ -468,8 +475,23 @@ Function Measure-DetectingErrorsInParameterList{
  )
 
   process {
-      #régle 8 :TODO l'attribut [Parameter[position=0)] nécessite l'attribut [CmdletBinding()]
-      #régle 9 :TODO la présence de l'attribut [Parameter[ValueFromPipeline = $true)] doit être unique dans un PSN  
+      #régle 8 :TODO la présence de l'attribut [Parameter(ValueFromPipeline = $true)] doit être unique dans un PSN  
+      #         Support the ProcessRecord Method
+      #           To accept all the records from the preceding cmdlet in the pipeline, your cmdlet must implement the ProcessRecord method.
+  
+  #Recommendations : 
+      #régle 11 : Use Strongly-Typed .NET Framework Types: Parameters should be defined as .NET Framework types to provide better parameter validation.
+      #régle 12 : Support Input from the Pipeline : In each parameter set for a cmdlet, include at least one parameter that supports input from the pipeline
+
+   #convention de Nommage      
+      #régle 9 : Use Singular Parameter Names; Avoid using plural names for parameters whose value is a single element.
+      #           https://msdn.microsoft.com/en-us/library/dd878270(v=vs.85).aspx#SD01
+      #régle 10: Use Pascal Case for Parameter Names
+
+      # régle 13 : nommage des paramètre utilisant un nom de varaible automatique : 
+      # https://github.com/PowerShell/PowerShell/issues/3061#issuecomment-275776552
+
+
    $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
    $DebugLogger.PSDebug("DetectingErrorsInParameterList") #<%REMOVE%>       
    
@@ -495,7 +517,7 @@ Function Measure-DetectingErrorsInParameterList{
     } 
     else {
       $DebugLogger.PSDebug('Type=unnamed block') #<%REMOVE%>
-      $NameOfBlock='N/A'
+      $NameOfBlock='unnamed block'
       $ParamBlock=$ScriptBlockAst.ParamBlock  
     }      
 
@@ -525,7 +547,7 @@ Function Measure-DetectingErrorsInParameterList{
      #régle 0 : si un paramétre déclare une position, les autres peuvent ne pas en déclarer
      #peut sembler incohérent ou incommode mais possible.
     
-    #Une fois la liste construite on connait tous les psn
+    #Une fois la liste construite on connait tous les PSN
     #Pour celui nommé '__AllParametersSet' on doit ajouter tous ces paramètres à tous les autres PSN
     $Groups=$ParametersList.Values|Group-Object -Property PSN
    
@@ -544,7 +566,7 @@ Function Measure-DetectingErrorsInParameterList{
     {
       Foreach ($group in $OtherGroups)
       {
-        $DebugLogger.PSDebug("Complete ParametersList") #<%REMOVE%>
+        $DebugLogger.PSDebug("Compléte ParametersList") #<%REMOVE%>
         $psnName=$group.Name
         Foreach ($parameter in $DefaultGroup.Group)
         {  
@@ -559,7 +581,7 @@ Function Measure-DetectingErrorsInParameterList{
                 Position=$parameter.Position
               }))
           }
-          else { $DebugLogger.PSDebug("Clé existant : $Key") } #<%REMOVE%>   
+          else { $DebugLogger.PSDebug("Clé existante : $Key") } #<%REMOVE%>   
         }               
       }
     }
@@ -569,7 +591,6 @@ Function Measure-DetectingErrorsInParameterList{
      $DebugLogger.PSDebug("Psn=$Psn") #<%REMOVE%>
    
      $isduplicate=$false
-     $isduplicate=$isduplicate #bug régle : PSUseDeclaredVarsMoreThanAssignment
      #Pour chaque jeu, contrôle  les positions de ses paramètres
      # on regroupe une seconde fois pour déterminer s'il y a des duplications
      # et connaitre le nom des paramètres concernés.
@@ -599,7 +620,7 @@ Function Measure-DetectingErrorsInParameterList{
         $ofs=','
         $Result_DEIPL.Add((NewDiagnosticRecord 'AvoidDuplicateParameterPosition' ($RulesMsg.E_PsnDuplicatePosition -F $NameOfBlock,$PSN,$_.Name,"$($_.group.name)") Error $ScriptBlockAst )) > $null
         $isDuplicate=$true
-        $isduplicate=$isduplicate #todo bug régle : PSUseDeclaredVarsMoreThanAssignment
+        $isduplicate=$isduplicate 
        }
 
      $Dr=@(TestSequentialAndBeginByZeroOrOne $NameOfBlock $GroupByPSN $ScriptBlockAst $isDuplicate)
@@ -625,78 +646,6 @@ Function Measure-DetectingErrorsInParameterList{
   }#process
 }#Measure-DetectingErrorsInParameterList
 
-#todo
-# Function Measure-DetectingErrorsInOutputAttribut{         
-# <#
-# .SYNOPSIS
-#   todo
-
-# .EXAMPLE
-#    Measure-DetectingErrorsInOutputAttribut $FunctionDefinitionAst
-    
-# .INPUTS
-#   [System.Management.Automation.Language.FunctionDefinitionAst]
-  
-# .OUTPUTS
-#    [Microsoft.Windows.Powershell.ScriptAnalyzer.Generic.DiagnosticRecord[]]
-   
-# .NOTES
-# #>
-#  [CmdletBinding()]
-#  [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]
-
-#  Param(
-#        [Parameter(Mandatory = $true)]
-#        [ValidateNotNullOrEmpty()]
-#        [System.Management.Automation.Language.FunctionDefinitionAst]
-#       $FunctionDefinitionAst  --> $ScriptBlockAst 
-#  )
-
-#   process {
-#    try
-#    {     
-
-#     <#
-#     Pour un attribut:
-#       s'il existe des valeurs de type chaîne Et que parametersetname n'est pas renseigné
-#        alors afficher warning "vérifiez si PSN est nécessaire""
-      
-#       s'il existe parametersetname vérifier que le nom existe bien dans la liste de tous les PSN
-#       sinon erreur.
-      
-#       s'il existe plusieurs déclarations , chacun doit préciser un PSN 
-#       sinon afficher Info "Précisez un PSN est recommander""
-       
-#     #>     
-#     Write-Warning "En construction."
-#     $Result_DEIOPA=New-object System.Collections.Arraylist
-#     $NameOfBlock=$FunctionDefinitionAst.Name
-#     $DebugLogger.PSDebug("$('-'*40)") #<%REMOVE%>
-#     $DebugLogger.PSDebug("DetectingErrorsInOutPutAttribut : '$NameOfBlock'") #<%REMOVE%> 
-    
-#     $ParamBlock=$FunctionDefinitionAst.Body.ParamBlock
-#     $DebugLogger.PSDebug("Paramblock is null : $($null -eq $ParamBlock)") #<%REMOVE%>
-#     if ($null -eq $ParamBlock)
-#     { return } 
-    
-#       $DebugLogger.PSDebug("end process") #<%REMOVE%>
-#     if ($Result_DEIOPA.count -gt 0)
-#     {
-#       $DebugLogger.PSDebug("return Result") #<%REMOVE%>
-#       return $Result_DEIOPA 
-#     }
-#    }
-#    catch
-#    {
-#       $ER= New-Object -Typename System.Management.Automation.ErrorRecord -Argumentlist $_.Exception, 
-#                                                                              "DetectingErrorsInParameterList-$NameOfBlock", 
-#                                                                              "NotSpecified",
-#                                                                              $FunctionDefinitionAst
-#       $DebugLogger.PSFatal($_.Exception.Message,$_.Exception) #<%REMOVE%>
-#       $PSCmdlet.ThrowTerminatingError($ER) 
-#    }       
-#   }#process
-# }#Measure-DetectingErrorsInOutputAttribut
 
 #<DEFINE %DEBUG%> 
 Function OnRemoveParameterSetRules {
