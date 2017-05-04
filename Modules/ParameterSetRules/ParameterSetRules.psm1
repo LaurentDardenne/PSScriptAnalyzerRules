@@ -15,6 +15,7 @@ Import-LocalizedData -BindingVariable RulesMsg -Filename ParameterSetRules.Resou
 
 #todo bug PSScriptAnalyzer : https://github.com/PowerShell/PSScriptAnalyzer/issues/599
 #todo bug ps v4,5,6: https://github.com/PowerShell/PowerShell/issues/2212#issuecomment-257989424
+#todo buf OutputType : https://github.com/PowerShell/PowerShell/issues/2935
 Import-module Log4Posh
 
 $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
