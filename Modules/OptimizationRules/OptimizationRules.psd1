@@ -107,6 +107,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         # ReleaseNotes = ''
+        
+        ExternalModuleDependencies = @('PSScriptAnalyzer')
 
     } # End of PSData hashtable
 
