@@ -70,7 +70,7 @@
         <foreColor value="Black" />
         <backColor value="Red" />        
     </mapping>  
-    <threshold value="DEBUG"/>    
+    <threshold value="OFF"/>    
   </appender>
 
   <appender name="FileInternal" type="log4net.Appender.RollingFileAppender">
