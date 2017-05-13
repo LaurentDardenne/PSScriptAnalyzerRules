@@ -1,12 +1,12 @@
-﻿[![Build status](https://ci.appveyor.com/api/projects/status/ql5p4n4u6klxakur?svg=true)](https://ci.appveyor.com/project/LaurentDardenne/psscriptanalyzerrules)
+﻿
 # PSScriptAnalyzerRules
 Rules for PSScriptAnalyzer   
 
 **Documentation**
 
-[Parameter set rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/ParameterSetRules/README.md)
+[Parameter set rules- Project moved to](https://github.com/LaurentDardenne/ParameterSetRules)
 
-[Optimization rules](https://github.com/LaurentDardenne/PSScriptAnalyzerRules/blob/master/Modules/OptimizationRules/README.md)
+[Optimization rules- Project moved to](https://github.com/LaurentDardenne/OptimizationRules)
 
 Community Analyzer Rules
 MBAnalyzer Rules
